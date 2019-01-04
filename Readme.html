@@ -152,7 +152,7 @@ $(document).ready(function () {
 <div id="installation" class="section level3">
 <h3>Installation</h3>
 <p>It can be <strong>installed</strong> using</p>
-<pre><code>pip install KTBoost</code></pre>
+<pre><code>pip install -U KTBoost</code></pre>
 <p>and then loaded using</p>
 <pre><code>import KTBoost.KTBoost as KTBoost</code></pre>
 </div>
@@ -180,7 +180,8 @@ model = KTBoost.BoostingClassifier(loss='deviance',update_step='newton')
 model = KTBoost.BoostingClassifier(loss='deviance',update_step='hybrid')
 ## Kernel boosting for regression with quadratic loss
 model = KTBoost.BoostingRegressor(loss='ls',base_learner='kernel')
-
+## Regression model where both the mean and the standard deviation depend on the covariates / features
+model = KTBoost.BoostingRegressor(loss='msr')
 
 ##################
 ## Train models ##

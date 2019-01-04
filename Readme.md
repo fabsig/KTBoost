@@ -66,7 +66,8 @@ model = KTBoost.BoostingClassifier(loss='deviance',update_step='newton')
 model = KTBoost.BoostingClassifier(loss='deviance',update_step='hybrid')
 ## Kernel boosting for regression with quadratic loss
 model = KTBoost.BoostingRegressor(loss='ls',base_learner='kernel')
-
+## Regression model where both the mean and the standard deviation depend on the covariates / features
+model = KTBoost.BoostingRegressor(loss='msr')
 
 ##################
 ## Train models ##

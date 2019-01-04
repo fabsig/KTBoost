@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: KTBoost
-Version: 0.0.9
+Version: 0.0.10
 Summary: Implements several boosting algorithms in Python
 Home-page: https://github.com/fabsig/KTBoost
 Author: Fabio Sigrist
@@ -74,7 +74,8 @@ Description: # KTBoost - A Python Package for Boosting
         model = KTBoost.BoostingClassifier(loss='deviance',update_step='hybrid')
         ## Kernel boosting for regression with quadratic loss
         model = KTBoost.BoostingRegressor(loss='ls',base_learner='kernel')
-        
+        ## Regression model where both the mean and the standard deviation depend on the covariates / features
+        model = KTBoost.BoostingRegressor(loss='msr')
         
         ##################
         ## Train models ##

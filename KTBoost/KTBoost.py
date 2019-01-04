@@ -74,6 +74,8 @@ from sklearn.utils.validation import check_is_fitted
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.exceptions import NotFittedError
 
+MAX_VAL_PRED=1e30
+MAX_VAL_LOGPRED=19*np.log(10)
 
 class QuantileEstimator(object):
     """An estimator predicting the alpha-quantile of the training targets."""
@@ -376,11 +378,28 @@ class LossFunction(six.with_metaclass(ABCMeta, object)):
         # update predictions (both in-bag and out-of-bag)
         y_pred[:, k] += (learning_rate
                          * tree.value[:, 0, 0].take(terminal_regions, axis=0))
+        
+        self.contrain_predictions(y_pred,k)
 
     @abstractmethod
     def _update_terminal_region(self, tree, terminal_regions, leaf, X, y,
                                 residual, pred, sample_weight):
         """Template method for updating terminal regions (=leaves). """
+
+    def contrain_predictions(self, y_pred, k):
+        """Constraining predictions to a certain range in order to avoid 
+        numerical overflows. 
+
+        Parameters
+        ----------
+        y_pred : ndarray, shape=(n,)
+            The predictions.
+        k : int, default 0
+            The index of the estimator being updated.    
+        """
+        
+        y_pred[:, k][y_pred[:, k]>MAX_VAL_PRED]=MAX_VAL_PRED
+        y_pred[:, k][y_pred[:, k]<-MAX_VAL_PRED]=-MAX_VAL_PRED
 
 
 class RegressionLossFunction(six.with_metaclass(ABCMeta, LossFunction)):
@@ -418,6 +437,7 @@ class LeastSquaresError(RegressionLossFunction):
         """
         # update predictions
         y_pred[:, k] += learning_rate * tree.predict(X).ravel()
+        self.contrain_predictions(y_pred,k)
 
     def hessian(self, y, pred, residual, **kargs):
         hessian = np.ones((y.shape[0],), dtype=np.float64)
@@ -427,9 +447,6 @@ class LeastSquaresError(RegressionLossFunction):
                                 residual, pred, sample_weight):
         pass
 
-#qq=MeanLogScaleEstimator()
-#qq.fit(X,y)
-#pred=qq.predict(X)
 
 class MeanScaleRegressionLoss(RegressionLossFunction):
     """Loss function for the case where both the mean and the standard 
@@ -485,6 +502,7 @@ class MeanScaleRegressionLoss(RegressionLossFunction):
         # update predictions (both in-bag and out-of-bag)
         y_pred[:, k] += (learning_rate
                          * tree.value[:, 0, 0].take(terminal_regions, axis=0))
+        self.contrain_predictions(y_pred,k)
 
     def _update_terminal_region(self, tree, terminal_regions, leaf, X, y,
                                 residual, pred, sample_weight, k):
@@ -504,6 +522,13 @@ class MeanScaleRegressionLoss(RegressionLossFunction):
         else:
             tree.value[leaf, 0, 0] = numerator / denominator
 
+    def contrain_predictions(self, y_pred, k):
+        if k==0:
+            y_pred[:, k][y_pred[:, k]>MAX_VAL_PRED]=MAX_VAL_PRED
+            y_pred[:, k][y_pred[:, k]<-MAX_VAL_PRED]=-MAX_VAL_PRED
+        if k==1:
+            y_pred[:, k][y_pred[:, k]>MAX_VAL_LOGPRED]=MAX_VAL_LOGPRED
+            y_pred[:, k][y_pred[:, k]<-MAX_VAL_LOGPRED]=-MAX_VAL_LOGPRED
 
 class LeastAbsoluteError(RegressionLossFunction):
     """Loss function for least absolute deviation (LAD) regression. """
@@ -666,8 +691,8 @@ class TobitLossFunction(RegressionLossFunction):
 
     References
     ----------
-    F. Sigrist and C. Hirnschall, Grabit: Gradient Tree Boosted Tobit Models
-    for Default Prediction, arXiv, 2018, https://arxiv.org/abs/1711.08695
+    Sigrist, F., & Hirnschall, C. (2017). Grabit: Gradient Tree Boosted Tobit
+    Models for Default Prediction. arXiv preprint arXiv:1711.08695
     """
 
     def __init__(self, n_classes, sigma=1, yl=0, yu=1):
@@ -783,6 +808,7 @@ class TobitLossFunction(RegressionLossFunction):
         else:
             tree.value[leaf, 0] = numerator / denominator
 
+
 class PoissonLossFunction(RegressionLossFunction):
     """Loss function for the Poisson model.
 
@@ -839,7 +865,6 @@ class PoissonLossFunction(RegressionLossFunction):
              ``learning_rate``.
         k : int, default 0
             The index of the estimator being updated.
-
         """
         # compute leaf for each sample in ``X``.
         terminal_regions = tree.apply(X)
@@ -858,9 +883,7 @@ class PoissonLossFunction(RegressionLossFunction):
         # update predictions (both in-bag and out-of-bag)
         y_pred[:, k] += (learning_rate
                          * tree.value[:, 0, 0].take(terminal_regions, axis=0))
-        maxv=19*np.log(10)
-        y_pred[:, k][y_pred[:, k]>maxv]=maxv##Avoid overflow (1e-19 < exp(pred) < 1e19)
-        y_pred[:, k][y_pred[:, k]<-maxv]=-maxv 
+        self.contrain_predictions(y_pred,k)
 
     def _update_terminal_region(self, tree, terminal_regions, leaf, X, y,
                                 residual, pred, sample_weight):
@@ -878,6 +901,10 @@ class PoissonLossFunction(RegressionLossFunction):
             tree.value[leaf, 0] = 0.0
         else:
             tree.value[leaf, 0] = numerator / denominator
+
+    def contrain_predictions(self, y_pred, k):
+        y_pred[:, k][y_pred[:, k]>MAX_VAL_LOGPRED]=MAX_VAL_LOGPRED
+        y_pred[:, k][y_pred[:, k]<-MAX_VAL_LOGPRED]=-MAX_VAL_LOGPRED
 
 
 class GammaLossFunction(RegressionLossFunction):
@@ -961,9 +988,8 @@ class GammaLossFunction(RegressionLossFunction):
         # update predictions (both in-bag and out-of-bag)
         y_pred[:, k] += (learning_rate
                          * tree.value[:, 0, 0].take(terminal_regions, axis=0))
-        maxv=19*np.log(10)
-        y_pred[:, k][y_pred[:, k]>maxv]=maxv##Avoid overflow (1e-19 < exp(pred) < 1e19)
-        y_pred[:, k][y_pred[:, k]<-maxv]=-maxv
+        self.contrain_predictions(y_pred,k)
+
 
     def _update_terminal_region(self, tree, terminal_regions, leaf, X, y,
                                 residual, pred, sample_weight):
@@ -982,7 +1008,11 @@ class GammaLossFunction(RegressionLossFunction):
             tree.value[leaf, 0] = 0.0
         else:
             tree.value[leaf, 0] = numerator / denominator
-            
+
+    def contrain_predictions(self, y_pred, k):
+        y_pred[:, k][y_pred[:, k]>MAX_VAL_LOGPRED]=MAX_VAL_LOGPRED
+        y_pred[:, k][y_pred[:, k]<-MAX_VAL_LOGPRED]=-MAX_VAL_LOGPRED
+
 
 class ClassificationLossFunction(six.with_metaclass(ABCMeta, LossFunction)):
     """Base class for classification loss functions. """
@@ -1286,9 +1316,8 @@ def predict_stages_kernel(estimators_kernel, X, learning_rate, score, pred_kerne
             else:
                 preds=modi.predict(X=X).ravel()
             score[:,k]+=learning_rate*preds
-            maxv=1E30##Avoid overflow 
-            score[:,k][score[:,k]>maxv]=maxv
-            score[:,k][score[:,k]<-maxv]=-maxv
+            score[:,k][score[:,k]>MAX_VAL_PRED]=MAX_VAL_PRED##Avoid overflow 
+            score[:,k][score[:,k]<-MAX_VAL_PRED]=-MAX_VAL_PRED
     return score
 
 def predict_stage_kernel(estimators_kernel, stage, X, learning_rate, score, pred_kernel_mat=None):
@@ -1307,9 +1336,8 @@ def predict_stage_kernel(estimators_kernel, stage, X, learning_rate, score, pred
         else:
             preds=modi.predict(X=X).ravel()
         score[:,k]+=learning_rate*preds
-        maxv=1E30##Avoid overflow 
-        score[:,k][score[:,k]>maxv]=maxv
-        score[:,k][score[:,k]<-maxv]=-maxv
+        score[:,k][score[:,k]>MAX_VAL_PRED]=MAX_VAL_PRED##Avoid overflow 
+        score[:,k][score[:,k]<-MAX_VAL_PRED]=-MAX_VAL_PRED
     return score
 
 class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
@@ -1405,7 +1433,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
             Calculate estimators
             """
             if not self.base_learner == "kernel":
-                # induce regression tree on residuals
+                # Calculate regression tree update
                 tree = DecisionTreeRegressor(
                     criterion=self.criterion,
                     splitter='best',
@@ -1475,9 +1503,10 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                     y_pred_last[:, k] += self.learning_rate * modi.predict(X,pred_kernel_mat=self.kernel_mat_nystroem_full).ravel()
                 else:
                     y_pred_last[:, k] += self.learning_rate * modi.predict(X,training_data=True).ravel()
-                maxv=1E30##Avoid overflow 
-                y_pred_last[:, k][y_pred_last[:, k]>maxv]=maxv
-                y_pred_last[:, k][y_pred_last[:, k]<-maxv]=-maxv
+                loss.contrain_predictions(y_pred_last,k)
+#                maxv=1E50##Avoid overflow
+#                y_pred_last[:, k][y_pred_last[:, k]>maxv]=maxv
+#                y_pred_last[:, k][y_pred_last[:, k]<-maxv]=-maxv
             if self.base_learner == "tree":
                 self.estimators_[nTreeKernel[0], k] = tree
                 if k==(loss.K-1): nTreeKernel[0]+=1
@@ -2045,16 +2074,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
 
 
 class BoostingClassifier(BaseBoosting, ClassifierMixin):
-    """Gradient Boosting for classification.
-
-    GB builds an additive model in a
-    forward stage-wise fashion; it allows for the optimization of
-    arbitrary differentiable loss functions. In each stage ``n_classes_``
-    regression trees are fit on the negative gradient of the
-    binomial or multinomial deviance loss function. Binary classification
-    is a special case where only a single regression tree is induced.
-
-    Read more in the :ref:`User Guide <gradient_boosting>`.
+    """Boosting for classification.
 
     Parameters
     ----------
@@ -2309,11 +2329,18 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
 
     References
     ----------
-    J. Friedman, Greedy Function Approximation: A Gradient Boosting
-    Machine, The Annals of Statistics, Vol. 29, No. 5, 2001.
-
-    F. Sigrist, Gradient and Newton Boosting for Classification and Regression, arXiv, 2018, 
-    https://arxiv.org/abs/1808.03064
+    Friedman, J., Hastie, T., & Tibshirani, R. (2000). Additive logistic 
+    regression: a statistical view of boosting. The annals of statistics, 
+    28(2), 337-407.
+    
+    Friedman, J. H. (2001). Greedy function approximation: a gradient boosting
+    machine. Annals of statistics, 1189-1232.
+    
+    Sigrist, F., & Hirnschall, C. (2017). Grabit: Gradient Tree Boosted Tobit
+    Models for Default Prediction. arXiv preprint arXiv:1711.08695.
+    
+    Sigrist, F. (2018). Gradient and Newton Boosting for Classification and
+    Regression. arXiv preprint arXiv:1808.03064.
     """
 
     _SUPPORTED_LOSS = ('deviance', 'exponential')
@@ -2531,16 +2558,10 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
 class BoostingRegressor(BaseBoosting, RegressorMixin):
     """Boosting for regression.
 
-    GB builds an additive model in a forward stage-wise fashion;
-    it allows for the optimization of arbitrary differentiable loss functions.
-    In each stage a regression tree is fit on the negative gradient of the
-    given loss function.
-
-    Read more in the :ref:`User Guide <gradient_boosting>`.
-
     Parameters
     ----------
-    loss : {'ls', 'lad', 'huber', 'quantile', 'tobit', 'msr'}, optional (default='ls')
+    loss : {'ls', 'lad', 'huber', 'quantile', 'poisson', 'gamma', 'tobit', 
+            'msr'}, optional (default='ls')
         loss function to be optimized. 'ls' refers to least squares
         regression. 'lad' (least absolute deviation) is a highly robust
         loss function solely based on order information of the input
@@ -2807,11 +2828,18 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
 
     References
     ----------
-    J. Friedman, Greedy Function Approximation: A Gradient Boosting
-    Machine, The Annals of Statistics, Vol. 29, No. 5, 2001.
-
-    F. Sigrist, Gradient and Newton Boosting for Classification and Regression, arXiv, 2018, 
-    https://arxiv.org/abs/1808.03064
+    Friedman, J., Hastie, T., & Tibshirani, R. (2000). Additive logistic 
+    regression: a statistical view of boosting. The annals of statistics, 
+    28(2), 337-407.
+    
+    Friedman, J. H. (2001). Greedy function approximation: a gradient boosting
+    machine. Annals of statistics, 1189-1232.
+    
+    Sigrist, F., & Hirnschall, C. (2017). Grabit: Gradient Tree Boosted Tobit
+    Models for Default Prediction. arXiv preprint arXiv:1711.08695.
+    
+    Sigrist, F. (2018). Gradient and Newton Boosting for Classification and
+    Regression. arXiv preprint arXiv:1808.03064.
     """
 
     _SUPPORTED_LOSS = ('ls', 'lad', 'huber', 'quantile', 'tobit', 'poisson',
