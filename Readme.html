@@ -150,9 +150,36 @@ $(document).ready(function () {
 <p>It can be <strong>installed</strong> using <code>pip install KTBoost</code> and then loaded using <code>import KTBoost.KTBoost as KTBoost</code>. The two main classes are <code>KTBoost.BoostingClassifier</code> and <code>KTBoost.BoostingRegressor</code>.</p>
 <p>The following <strong>code example</strong> defines a model, trains it, and makes predictions.</p>
 <pre class="python"><code>import KTBoost.KTBoost as KTBoost
-model = KTBoost.BoostingRegressor(loss=&quot;ls&quot;,base_learner=&quot;tree&quot;)
+
+######################################
+## Define models (several examples) ##
+######################################
+## Standard tree boosting for regression with quadratic loss and hybrid gradient-Newton updates as in Friedman (2001)
+model = KTBoost.BoostingRegressor(loss='ls')
+## Grabit model as in Sigrist and Hirnschall (2018)
+model = KTBoost.BoostingRegressor(loss='tobit')
+## KTBoost algorithm for classification with Newton updates
+model = KTBoost.BoostingClassifier(loss='deviance',base_learner=&quot;combined&quot;,update_step='newton')
+## Gradient boosting for classification with trees as base learners
+model = KTBoost.BoostingClassifier(loss='deviance',update_step='gradient')
+## Newton boosting for classification model with trees as base learners
+model = KTBoost.BoostingClassifier(loss='deviance',update_step='newton')
+## Hybrid gradient-Newton boosting (see Friedman, 2001) for classification with trees as base learners
+model = KTBoost.BoostingClassifier(loss='deviance',update_step='hybrid')
+## Kernel boosting for regression with quadratic loss
+model = KTBoost.BoostingRegressor(loss='ls',base_learner=&quot;kernel&quot;)
+
+
+##################
+## Train models ##
+##################
 model.fit(Xtrain,ytrain)
-model.predict(Xpred)</code></pre>
+
+######################
+## Make predictions ##
+######################
+model.predict(Xpred)
+</code></pre>
 </div>
 
 

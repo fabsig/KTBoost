@@ -33,7 +33,34 @@ The following **code example** defines a model, trains it, and makes predictions
 
 ```python
 import KTBoost.KTBoost as KTBoost
-model = KTBoost.BoostingRegressor(loss="ls",base_learner="tree")
+
+######################################
+## Define models (several examples) ##
+######################################
+## Standard tree boosting for regression with quadratic loss and hybrid gradient-Newton updates as in Friedman (2001)
+model = KTBoost.BoostingRegressor(loss='ls')
+## Grabit model as in Sigrist and Hirnschall (2018)
+model = KTBoost.BoostingRegressor(loss='tobit')
+## KTBoost algorithm for classification with Newton updates
+model = KTBoost.BoostingClassifier(loss='deviance',base_learner='combined',update_step='newton')
+## Gradient boosting for classification with trees as base learners
+model = KTBoost.BoostingClassifier(loss='deviance',update_step='gradient')
+## Newton boosting for classification model with trees as base learners
+model = KTBoost.BoostingClassifier(loss='deviance',update_step='newton')
+## Hybrid gradient-Newton boosting (Friedman, 2001) for classification with trees as base learners
+model = KTBoost.BoostingClassifier(loss='deviance',update_step='hybrid')
+## Kernel boosting for regression with quadratic loss
+model = KTBoost.BoostingRegressor(loss='ls',base_learner='kernel')
+
+
+##################
+## Train models ##
+##################
 model.fit(Xtrain,ytrain)
+
+######################
+## Make predictions ##
+######################
 model.predict(Xpred)
+
 ```
