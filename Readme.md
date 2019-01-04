@@ -1,9 +1,10 @@
-# KTBoost
+# KTBoost - A Python Package for Boosting
 
-This Python package implements several boosting algorithms with different combinations of base learners, optimization algorithms, and loss functions. 
+This Python package implements several boosting algorithms with different combinations of base learners, optimization algorithms, and loss functions.
 
+### Description
 
-Concerning **base learners**, this includes:
+Concerning **base learners**, KTboost includes:
 
 * Trees 
 * Kernel Ridge regression
@@ -25,11 +26,25 @@ The package implements the following **loss functions**:
 * **Mixed continuous-categorical data** ("censored regression"): negative Tobit likelihood (i.e., the Grabit model)
 
 
+
+
+### Installation
+
+It can be **installed** using 
+```
+pip install KTBoost
+```
+and then loaded using 
+```
+import KTBoost.KTBoost as KTBoost
+```
+
+### Usage and examples
 The package re-uses code from scikit-learn and its workflow is very similar to that of scikit-learn.
 
-It can be **installed** using `pip install KTBoost` and then loaded using `import KTBoost.KTBoost as KTBoost`. The two main classes are `KTBoost.BoostingClassifier` and `KTBoost.BoostingRegressor`. 
+The two main classes are `KTBoost.BoostingClassifier` and `KTBoost.BoostingRegressor`. 
 
-The following **code example** defines a model, trains it, and makes predictions.
+The following **code example** defines models, trains them, and makes predictions.
 
 ```python
 import KTBoost.KTBoost as KTBoost
@@ -64,3 +79,10 @@ model.fit(Xtrain,ytrain)
 model.predict(Xpred)
 
 ```
+
+### References
+
+* Friedman, J., Hastie, T., & Tibshirani, R. (2000). Additive logistic regression: a statistical view of boosting. The annals of statistics, 28(2), 337-407.
+* Friedman, J. H. (2001). Greedy function approximation: a gradient boosting machine. Annals of statistics, 1189-1232.
+* Sigrist, F. (2018). Gradient and Newton Boosting for Classification and Regression. arXiv preprint arXiv:1808.03064.
+* Sigrist, F., & Hirnschall, C. (2017). Grabit: Gradient Tree Boosted Tobit Models for Default Prediction. arXiv preprint arXiv:1711.08695.

@@ -124,10 +124,12 @@ $(document).ready(function () {
 </div>
 
 
-<div id="ktboost" class="section level1">
-<h1>KTBoost</h1>
+<div id="ktboost---a-python-package-for-boosting" class="section level1">
+<h1>KTBoost - A Python Package for Boosting</h1>
 <p>This Python package implements several boosting algorithms with different combinations of base learners, optimization algorithms, and loss functions.</p>
-<p>Concerning <strong>base learners</strong>, this includes:</p>
+<div id="description" class="section level3">
+<h3>Description</h3>
+<p>Concerning <strong>base learners</strong>, KTboost includes:</p>
 <ul>
 <li>Trees</li>
 <li>Kernel Ridge regression</li>
@@ -146,9 +148,19 @@ $(document).ready(function () {
 <li>(Unorderd) <strong>Categorical data</strong> (“classification”): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax</li>
 <li><strong>Mixed continuous-categorical data</strong> (“censored regression”): negative Tobit likelihood (i.e., the Grabit model)</li>
 </ul>
+</div>
+<div id="installation" class="section level3">
+<h3>Installation</h3>
+<p>It can be <strong>installed</strong> using</p>
+<pre><code>pip install KTBoost</code></pre>
+<p>and then loaded using</p>
+<pre><code>import KTBoost.KTBoost as KTBoost</code></pre>
+</div>
+<div id="usage-and-examples" class="section level3">
+<h3>Usage and examples</h3>
 <p>The package re-uses code from scikit-learn and its workflow is very similar to that of scikit-learn.</p>
-<p>It can be <strong>installed</strong> using <code>pip install KTBoost</code> and then loaded using <code>import KTBoost.KTBoost as KTBoost</code>. The two main classes are <code>KTBoost.BoostingClassifier</code> and <code>KTBoost.BoostingRegressor</code>.</p>
-<p>The following <strong>code example</strong> defines a model, trains it, and makes predictions.</p>
+<p>The two main classes are <code>KTBoost.BoostingClassifier</code> and <code>KTBoost.BoostingRegressor</code>.</p>
+<p>The following <strong>code example</strong> defines models, trains them, and makes predictions.</p>
 <pre class="python"><code>import KTBoost.KTBoost as KTBoost
 
 ######################################
@@ -180,6 +192,16 @@ model.fit(Xtrain,ytrain)
 ######################
 model.predict(Xpred)
 </code></pre>
+</div>
+<div id="references" class="section level3">
+<h3>References</h3>
+<ul>
+<li>Friedman, J., Hastie, T., &amp; Tibshirani, R. (2000). Additive logistic regression: a statistical view of boosting. The annals of statistics, 28(2), 337-407.</li>
+<li>Friedman, J. H. (2001). Greedy function approximation: a gradient boosting machine. Annals of statistics, 1189-1232.</li>
+<li>Sigrist, F. (2018). Gradient and Newton Boosting for Classification and Regression. arXiv preprint arXiv:1808.03064.</li>
+<li>Sigrist, F., &amp; Hirnschall, C. (2017). Grabit: Gradient Tree Boosted Tobit Models for Default Prediction. arXiv preprint arXiv:1711.08695.</li>
+</ul>
+</div>
 </div>
 
 
