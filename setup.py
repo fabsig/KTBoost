@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="KTBoost",
-    version="0.0.8",
+    version="0.0.9",
     author="Fabio Sigrist",
     author_email="fabiosigrist@gmail.com",
     description="Implements several boosting algorithms in Python",

@@ -32,7 +32,7 @@ The package implements the following **loss functions**:
 
 It can be **installed** using 
 ```
-pip install KTBoost
+pip install -U KTBoost
 ```
 and then loaded using 
 ```
