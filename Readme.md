@@ -19,10 +19,10 @@ Concerning the **optimization** step for finding the boosting updates, the packa
 
 The package implements the following **loss functions**:
 
-* **Continuous data** (regression): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian likelihood with both the mean and the standard deviation as functions of features
-* **Count data** (regression): Poisson regression loss
-* (Unorderd) **Categorical data** (classification): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax
-* **Mixed continuous-categorical data** (censored regression): negative Tobit likelihood (i.e., the Grabit model)
+* **Continuous data** ("regression"): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian likelihood with both the mean and the standard deviation as functions of features
+* **Count data** ("regression"): Poisson regression loss
+* (Unorderd) **Categorical data** ("classification"): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax
+* **Mixed continuous-categorical data** ("censored regression"): negative Tobit likelihood (i.e., the Grabit model)
 
 
 The package re-uses code from scikit-learn and its workflow is very similar to that of scikit-learn.
