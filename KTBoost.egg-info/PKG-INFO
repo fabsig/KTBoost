@@ -1,0 +1,22 @@
+Metadata-Version: 2.1
+Name: KTBoost
+Version: 0.0.5
+Summary: Implements several boosting algorithms in Python
+Home-page: https://github.com/fabsig/KTBoost
+Author: Fabio Sigrist
+Author-email: fabiosigrist@gmail.com
+License: UNKNOWN
+Description: # KTBoost
+        
+        This package implements several boosting algorithm. In particular, this 
+        includes tree and kernel boosting as well as the combined KTBoost algorithm. The package
+        supports both gradient and Newton boosting updates as well as a hybrid version of the two
+        for trees. Further, the package implements several loss functions which inlucdes 
+        the Tobit likelihood (i.e. the Grabit model).
+        The package is an extenion of scikit-learn and re-uses code from
+        scikit-learn.
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 2.7
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
