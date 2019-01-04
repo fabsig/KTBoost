@@ -141,10 +141,10 @@ $(document).ready(function () {
 </ul>
 <p>The package implements the following <strong>loss functions</strong>:</p>
 <ul>
-<li><strong>Continuous data</strong> (regression): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian likelihood with both the mean and the standard deviation as functions of features</li>
-<li><strong>Count data</strong> (regression): Poisson regression loss</li>
-<li>(Unorderd) <strong>Categorical data</strong> (classification): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax</li>
-<li><strong>Mixed continuous-categorical data</strong> (censored regression): negative Tobit likelihood (i.e., the Grabit model)</li>
+<li><strong>Continuous data</strong> (“regression”): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian likelihood with both the mean and the standard deviation as functions of features</li>
+<li><strong>Count data</strong> (“regression”): Poisson regression loss</li>
+<li>(Unorderd) <strong>Categorical data</strong> (“classification”): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax</li>
+<li><strong>Mixed continuous-categorical data</strong> (“censored regression”): negative Tobit likelihood (i.e., the Grabit model)</li>
 </ul>
 <p>The package re-uses code from scikit-learn and its workflow is very similar to that of scikit-learn.</p>
 <p>It can be <strong>installed</strong> using <code>pip install KTBoost</code> and then loaded using <code>import KTBoost.KTBoost as KTBoost</code>. The two main classes are <code>KTBoost.BoostingClassifier</code> and <code>KTBoost.BoostingRegressor</code>.</p>
@@ -159,15 +159,15 @@ model = KTBoost.BoostingRegressor(loss='ls')
 ## Grabit model as in Sigrist and Hirnschall (2018)
 model = KTBoost.BoostingRegressor(loss='tobit')
 ## KTBoost algorithm for classification with Newton updates
-model = KTBoost.BoostingClassifier(loss='deviance',base_learner=&quot;combined&quot;,update_step='newton')
+model = KTBoost.BoostingClassifier(loss='deviance',base_learner='combined',update_step='newton')
 ## Gradient boosting for classification with trees as base learners
 model = KTBoost.BoostingClassifier(loss='deviance',update_step='gradient')
 ## Newton boosting for classification model with trees as base learners
 model = KTBoost.BoostingClassifier(loss='deviance',update_step='newton')
-## Hybrid gradient-Newton boosting (see Friedman, 2001) for classification with trees as base learners
+## Hybrid gradient-Newton boosting (Friedman, 2001) for classification with trees as base learners
 model = KTBoost.BoostingClassifier(loss='deviance',update_step='hybrid')
 ## Kernel boosting for regression with quadratic loss
-model = KTBoost.BoostingRegressor(loss='ls',base_learner=&quot;kernel&quot;)
+model = KTBoost.BoostingRegressor(loss='ls',base_learner='kernel')
 
 
 ##################
