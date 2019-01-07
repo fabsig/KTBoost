@@ -2,25 +2,25 @@
 
 This Python package implements several boosting algorithms with different combinations of base learners, optimization algorithms, and loss functions.
 
-### Description
+## Description
 
 Concerning **base learners**, KTboost includes:
 
 * Trees 
-* Kernel Ridge regression
+* Kernel Ridge regression (i.e., penalized functions in reproducing kernel Hilbert spaces (RKHS) or "posterior" means of Gaussian processes)
 * A combination of the two (i.e., the KTBoost algorithm) 
 
 
 Concerning the **optimization** step for finding the boosting updates, the package supports:
 
 * Gradient descent
-* Newton-Rahson method
+* Newton-Rahson method (if applicable)
 * A hybrid version of the two for trees as base learners
 
 
 The package implements the following **loss functions**:
 
-* **Continuous data** ("regression"): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian likelihood with both the mean and the standard deviation as functions of features
+* **Continuous data** ("regression"): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian log-likelihood with both the mean and the standard deviation as functions of features
 * **Count data** ("regression"): Poisson regression loss
 * (Unorderd) **Categorical data** ("classification"): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax
 * **Mixed continuous-categorical data** ("censored regression"): negative Tobit likelihood (i.e., the Grabit model)
@@ -28,7 +28,7 @@ The package implements the following **loss functions**:
 
 
 
-### Installation
+## Installation
 
 It can be **installed** using 
 ```
@@ -39,7 +39,7 @@ and then loaded using
 import KTBoost.KTBoost as KTBoost
 ```
 
-### Usage and examples
+## Usage and examples
 The package re-uses code from scikit-learn and its workflow is very similar to that of scikit-learn.
 
 The two main classes are `KTBoost.BoostingClassifier` and `KTBoost.BoostingRegressor`. 
@@ -49,13 +49,27 @@ The following **code example** defines models, trains them, and makes prediction
 ```python
 import KTBoost.KTBoost as KTBoost
 
-######################################
-## Define models (several examples) ##
-######################################
+################################################
+## Define model (see below for more examples) ##
+################################################
 ## Standard tree boosting for regression with quadratic loss and hybrid gradient-Newton updates as in Friedman (2001)
 model = KTBoost.BoostingRegressor(loss='ls')
-## Grabit model as in Sigrist and Hirnschall (2018)
-model = KTBoost.BoostingRegressor(loss='tobit')
+
+##################
+## Train models ##
+##################
+model.fit(Xtrain,ytrain)
+
+######################
+## Make predictions ##
+######################
+model.predict(Xpred)
+
+#############################
+## More examples of models ##
+#############################
+## Grabit model (Sigrist and Hirnschall, 2017) with lower and upper limits at 0 and 100
+model = KTBoost.BoostingRegressor(loss='tobit',yl=0,yu=100)
 ## KTBoost algorithm for classification with Newton updates
 model = KTBoost.BoostingClassifier(loss='deviance',base_learner='combined',update_step='newton')
 ## Gradient boosting for classification with trees as base learners
@@ -69,19 +83,12 @@ model = KTBoost.BoostingRegressor(loss='ls',base_learner='kernel')
 ## Regression model where both the mean and the standard deviation depend on the covariates / features
 model = KTBoost.BoostingRegressor(loss='msr')
 
-##################
-## Train models ##
-##################
-model.fit(Xtrain,ytrain)
-
-######################
-## Make predictions ##
-######################
-model.predict(Xpred)
-
 ```
 
-### References
+## Author
+Fabio Sigrist
+
+## References
 
 * Friedman, J., Hastie, T., & Tibshirani, R. (2000). Additive logistic regression: a statistical view of boosting. The annals of statistics, 28(2), 337-407.
 * Friedman, J. H. (2001). Greedy function approximation: a gradient boosting machine. Annals of statistics, 1189-1232.

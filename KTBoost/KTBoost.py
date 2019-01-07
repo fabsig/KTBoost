@@ -379,14 +379,14 @@ class LossFunction(six.with_metaclass(ABCMeta, object)):
         y_pred[:, k] += (learning_rate
                          * tree.value[:, 0, 0].take(terminal_regions, axis=0))
         
-        self.contrain_predictions(y_pred,k)
+        self.avoid_overflow(y_pred,k)
 
     @abstractmethod
     def _update_terminal_region(self, tree, terminal_regions, leaf, X, y,
                                 residual, pred, sample_weight):
         """Template method for updating terminal regions (=leaves). """
 
-    def contrain_predictions(self, y_pred, k):
+    def avoid_overflow(self, y_pred, k):
         """Constraining predictions to a certain range in order to avoid 
         numerical overflows. 
 
@@ -437,7 +437,7 @@ class LeastSquaresError(RegressionLossFunction):
         """
         # update predictions
         y_pred[:, k] += learning_rate * tree.predict(X).ravel()
-        self.contrain_predictions(y_pred,k)
+        self.avoid_overflow(y_pred,k)
 
     def hessian(self, y, pred, residual, **kargs):
         hessian = np.ones((y.shape[0],), dtype=np.float64)
@@ -502,7 +502,7 @@ class MeanScaleRegressionLoss(RegressionLossFunction):
         # update predictions (both in-bag and out-of-bag)
         y_pred[:, k] += (learning_rate
                          * tree.value[:, 0, 0].take(terminal_regions, axis=0))
-        self.contrain_predictions(y_pred,k)
+        self.avoid_overflow(y_pred,k)
 
     def _update_terminal_region(self, tree, terminal_regions, leaf, X, y,
                                 residual, pred, sample_weight, k):
@@ -522,7 +522,7 @@ class MeanScaleRegressionLoss(RegressionLossFunction):
         else:
             tree.value[leaf, 0, 0] = numerator / denominator
 
-    def contrain_predictions(self, y_pred, k):
+    def avoid_overflow(self, y_pred, k):
         if k==0:
             y_pred[:, k][y_pred[:, k]>MAX_VAL_PRED]=MAX_VAL_PRED
             y_pred[:, k][y_pred[:, k]<-MAX_VAL_PRED]=-MAX_VAL_PRED
@@ -883,7 +883,7 @@ class PoissonLossFunction(RegressionLossFunction):
         # update predictions (both in-bag and out-of-bag)
         y_pred[:, k] += (learning_rate
                          * tree.value[:, 0, 0].take(terminal_regions, axis=0))
-        self.contrain_predictions(y_pred,k)
+        self.avoid_overflow(y_pred,k)
 
     def _update_terminal_region(self, tree, terminal_regions, leaf, X, y,
                                 residual, pred, sample_weight):
@@ -902,7 +902,7 @@ class PoissonLossFunction(RegressionLossFunction):
         else:
             tree.value[leaf, 0] = numerator / denominator
 
-    def contrain_predictions(self, y_pred, k):
+    def avoid_overflow(self, y_pred, k):
         y_pred[:, k][y_pred[:, k]>MAX_VAL_LOGPRED]=MAX_VAL_LOGPRED
         y_pred[:, k][y_pred[:, k]<-MAX_VAL_LOGPRED]=-MAX_VAL_LOGPRED
 
@@ -988,7 +988,7 @@ class GammaLossFunction(RegressionLossFunction):
         # update predictions (both in-bag and out-of-bag)
         y_pred[:, k] += (learning_rate
                          * tree.value[:, 0, 0].take(terminal_regions, axis=0))
-        self.contrain_predictions(y_pred,k)
+        self.avoid_overflow(y_pred,k)
 
 
     def _update_terminal_region(self, tree, terminal_regions, leaf, X, y,
@@ -1009,7 +1009,7 @@ class GammaLossFunction(RegressionLossFunction):
         else:
             tree.value[leaf, 0] = numerator / denominator
 
-    def contrain_predictions(self, y_pred, k):
+    def avoid_overflow(self, y_pred, k):
         y_pred[:, k][y_pred[:, k]>MAX_VAL_LOGPRED]=MAX_VAL_LOGPRED
         y_pred[:, k][y_pred[:, k]<-MAX_VAL_LOGPRED]=-MAX_VAL_LOGPRED
 
@@ -1503,7 +1503,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                     y_pred_last[:, k] += self.learning_rate * modi.predict(X,pred_kernel_mat=self.kernel_mat_nystroem_full).ravel()
                 else:
                     y_pred_last[:, k] += self.learning_rate * modi.predict(X,training_data=True).ravel()
-                loss.contrain_predictions(y_pred_last,k)
+                loss.avoid_overflow(y_pred_last,k)
 #                maxv=1E50##Avoid overflow
 #                y_pred_last[:, k][y_pred_last[:, k]>maxv]=maxv
 #                y_pred_last[:, k][y_pred_last[:, k]<-maxv]=-maxv
