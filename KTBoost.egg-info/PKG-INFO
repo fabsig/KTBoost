@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: KTBoost
-Version: 0.0.10
+Version: 0.0.11
 Summary: Implements several boosting algorithms in Python
 Home-page: https://github.com/fabsig/KTBoost
 Author: Fabio Sigrist
@@ -10,25 +10,25 @@ Description: # KTBoost - A Python Package for Boosting
         
         This Python package implements several boosting algorithms with different combinations of base learners, optimization algorithms, and loss functions.
         
-        ### Description
+        ## Description
         
         Concerning **base learners**, KTboost includes:
         
         * Trees 
-        * Kernel Ridge regression
+        * Kernel Ridge regression (a.k.a. penalized reproducing kernel Hilbert space (RKHS) regression or (the mean of) Gaussian process regression)
         * A combination of the two (i.e., the KTBoost algorithm) 
         
         
         Concerning the **optimization** step for finding the boosting updates, the package supports:
         
         * Gradient descent
-        * Newton-Rahson method
+        * Newton-Rahson method (if applicable)
         * A hybrid version of the two for trees as base learners
         
         
         The package implements the following **loss functions**:
         
-        * **Continuous data** ("regression"): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian likelihood with both the mean and the standard deviation as functions of features
+        * **Continuous data** ("regression"): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian log-likelihood with both the mean and the standard deviation as functions of features
         * **Count data** ("regression"): Poisson regression loss
         * (Unorderd) **Categorical data** ("classification"): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax
         * **Mixed continuous-categorical data** ("censored regression"): negative Tobit likelihood (i.e., the Grabit model)
@@ -36,7 +36,7 @@ Description: # KTBoost - A Python Package for Boosting
         
         
         
-        ### Installation
+        ## Installation
         
         It can be **installed** using 
         ```
@@ -47,7 +47,7 @@ Description: # KTBoost - A Python Package for Boosting
         import KTBoost.KTBoost as KTBoost
         ```
         
-        ### Usage and examples
+        ## Usage and examples
         The package re-uses code from scikit-learn and its workflow is very similar to that of scikit-learn.
         
         The two main classes are `KTBoost.BoostingClassifier` and `KTBoost.BoostingRegressor`. 
@@ -57,13 +57,27 @@ Description: # KTBoost - A Python Package for Boosting
         ```python
         import KTBoost.KTBoost as KTBoost
         
-        ######################################
-        ## Define models (several examples) ##
-        ######################################
+        ################################################
+        ## Define model (see below for more examples) ##
+        ################################################
         ## Standard tree boosting for regression with quadratic loss and hybrid gradient-Newton updates as in Friedman (2001)
         model = KTBoost.BoostingRegressor(loss='ls')
-        ## Grabit model as in Sigrist and Hirnschall (2018)
-        model = KTBoost.BoostingRegressor(loss='tobit')
+        
+        ##################
+        ## Train models ##
+        ##################
+        model.fit(Xtrain,ytrain)
+        
+        ######################
+        ## Make predictions ##
+        ######################
+        model.predict(Xpred)
+        
+        #############################
+        ## More examples of models ##
+        #############################
+        ## Grabit model (Sigrist and Hirnschall, 2017) with lower and upper limits at 0 and 100
+        model = KTBoost.BoostingRegressor(loss='tobit',yl=0,yu=100)
         ## KTBoost algorithm for classification with Newton updates
         model = KTBoost.BoostingClassifier(loss='deviance',base_learner='combined',update_step='newton')
         ## Gradient boosting for classification with trees as base learners
@@ -77,19 +91,12 @@ Description: # KTBoost - A Python Package for Boosting
         ## Regression model where both the mean and the standard deviation depend on the covariates / features
         model = KTBoost.BoostingRegressor(loss='msr')
         
-        ##################
-        ## Train models ##
-        ##################
-        model.fit(Xtrain,ytrain)
-        
-        ######################
-        ## Make predictions ##
-        ######################
-        model.predict(Xpred)
-        
         ```
         
-        ### References
+        ## Author
+        Fabio Sigrist
+        
+        ## References
         
         * Friedman, J., Hastie, T., & Tibshirani, R. (2000). Additive logistic regression: a statistical view of boosting. The annals of statistics, 28(2), 337-407.
         * Friedman, J. H. (2001). Greedy function approximation: a gradient boosting machine. Annals of statistics, 1189-1232.
