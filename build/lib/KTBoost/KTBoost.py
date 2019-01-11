@@ -359,7 +359,6 @@ class LossFunction(six.with_metaclass(ABCMeta, object)):
              ``learning_rate``.
         k : int, default 0
             The index of the estimator being updated.
-
         """
         # compute leaf for each sample in ``X``.
         terminal_regions = tree.apply(X)
@@ -378,7 +377,7 @@ class LossFunction(six.with_metaclass(ABCMeta, object)):
         # update predictions (both in-bag and out-of-bag)
         y_pred[:, k] += (learning_rate
                          * tree.value[:, 0, 0].take(terminal_regions, axis=0))
-        
+
         self.avoid_overflow(y_pred,k)
 
     @abstractmethod
@@ -837,54 +836,6 @@ class PoissonLossFunction(RegressionLossFunction):
         """Compute the second derivative """
         return np.exp(pred.ravel())
 
-    def update_terminal_regions(self, tree, X, y, residual, y_pred,
-                                sample_weight, sample_mask,
-                                learning_rate=1.0, k=0, update_step="hybrid"):
-        """Update the terminal regions (=leaves) of the given tree and
-        updates the current predictions of the model. Traverses tree
-        and invokes template method `_update_terminal_region`.
-
-        Parameters
-        ----------
-        tree : tree.Tree
-            The tree object.
-        X : ndarray, shape=(n, m)
-            The data array.
-        y : ndarray, shape=(n,)
-            The target labels.
-        residual : ndarray, shape=(n,)
-            The residuals (usually the negative gradient).
-        y_pred : ndarray, shape=(n,)
-            The predictions.
-        sample_weight : ndarray, shape=(n,)
-            The weight of each sample.
-        sample_mask : ndarray, shape=(n,)
-            The sample mask to be used.
-        learning_rate : float, default=0.1
-            learning rate shrinks the contribution of each tree by
-             ``learning_rate``.
-        k : int, default 0
-            The index of the estimator being updated.
-        """
-        # compute leaf for each sample in ``X``.
-        terminal_regions = tree.apply(X)
-
-        if update_step=="hybrid":
-            # mask all which are not in sample mask.
-            masked_terminal_regions = terminal_regions.copy()
-            masked_terminal_regions[~sample_mask] = -1
-
-            # update each leaf (= perform line search)
-            for leaf in np.where(tree.children_left == TREE_LEAF)[0]:
-                self._update_terminal_region(tree, masked_terminal_regions,
-                                             leaf, X, y, residual,
-                                             y_pred[:, k], sample_weight)
-
-        # update predictions (both in-bag and out-of-bag)
-        y_pred[:, k] += (learning_rate
-                         * tree.value[:, 0, 0].take(terminal_regions, axis=0))
-        self.avoid_overflow(y_pred,k)
-
     def _update_terminal_region(self, tree, terminal_regions, leaf, X, y,
                                 residual, pred, sample_weight):
         """Make a single Newton-Raphson step.
@@ -940,56 +891,6 @@ class GammaLossFunction(RegressionLossFunction):
     def hessian(self, y, pred, residual, **kargs):
         """Compute the second derivative """
         return self.gamma * np.exp(-pred.ravel()) * y
-
-    def update_terminal_regions(self, tree, X, y, residual, y_pred,
-                                sample_weight, sample_mask,
-                                learning_rate=1.0, k=0, update_step="hybrid"):
-        """Update the terminal regions (=leaves) of the given tree and
-        updates the current predictions of the model. Traverses tree
-        and invokes template method `_update_terminal_region`.
-
-        Parameters
-        ----------
-        tree : tree.Tree
-            The tree object.
-        X : ndarray, shape=(n, m)
-            The data array.
-        y : ndarray, shape=(n,)
-            The target labels.
-        residual : ndarray, shape=(n,)
-            The residuals (usually the negative gradient).
-        y_pred : ndarray, shape=(n,)
-            The predictions.
-        sample_weight : ndarray, shape=(n,)
-            The weight of each sample.
-        sample_mask : ndarray, shape=(n,)
-            The sample mask to be used.
-        learning_rate : float, default=0.1
-            learning rate shrinks the contribution of each tree by
-             ``learning_rate``.
-        k : int, default 0
-            The index of the estimator being updated.
-
-        """
-        # compute leaf for each sample in ``X``.
-        terminal_regions = tree.apply(X)
-
-        if update_step=="hybrid":
-            # mask all which are not in sample mask.
-            masked_terminal_regions = terminal_regions.copy()
-            masked_terminal_regions[~sample_mask] = -1
-
-            # update each leaf (= perform line search)
-            for leaf in np.where(tree.children_left == TREE_LEAF)[0]:
-                self._update_terminal_region(tree, masked_terminal_regions,
-                                             leaf, X, y, residual,
-                                             y_pred[:, k], sample_weight)
-
-        # update predictions (both in-bag and out-of-bag)
-        y_pred[:, k] += (learning_rate
-                         * tree.value[:, 0, 0].take(terminal_regions, axis=0))
-        self.avoid_overflow(y_pred,k)
-
 
     def _update_terminal_region(self, tree, terminal_regions, leaf, X, y,
                                 residual, pred, sample_weight):
@@ -1467,13 +1368,14 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                                                  weights, sample_mask,
                                                  self.learning_rate, k=k,
                                                  update_step=self.update_step)
-            if not self.base_learner == "tree": # XXX ToDo: treatment of (i) X_csc and (ii) X_idx_sorted.
+            if not self.base_learner == "tree": # XXX ToDo: handling of (i) X_csc and (ii) X_idx_sorted.
                 if self.kernel_mat is None:##Initialize kernel matrix once (ToDo: move this out of this function to proper initialization)
                     modi = kr_sp.KernelRidge(alpha=self.alphaReg,theta=self.theta,kernel=self.kernel,
                                              n_neighbors=self.n_neighbors,prctg_neighbors=self.prctg_neighbors,
                                              range_adjust=self.range_adjust,sparse=self.sparse,nystroem=self.nystroem,
                                              n_components=self.n_components)
                     self.kernel_mat=modi._get_kernel(X, nystroem_kernel=self.nystroem)
+                    ## 64bit calculations are faster 
                     if not self.kernel_mat.dtype==np.float64: self.kernel_mat=self.kernel_mat.astype(np.float64)
                     if self.theta is None: self.theta=modi.theta
                     if self.nystroem: 
@@ -1504,9 +1406,6 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                 else:
                     y_pred_last[:, k] += self.learning_rate * modi.predict(X,training_data=True).ravel()
                 loss.avoid_overflow(y_pred_last,k)
-#                maxv=1E50##Avoid overflow
-#                y_pred_last[:, k][y_pred_last[:, k]>maxv]=maxv
-#                y_pred_last[:, k][y_pred_last[:, k]<-maxv]=-maxv
             if self.base_learner == "tree":
                 self.estimators_[nTreeKernel[0], k] = tree
                 if k==(loss.K-1): nTreeKernel[0]+=1
