@@ -7,23 +7,23 @@ This Python package implements several boosting algorithms with different combin
 Concerning **base learners**, KTboost includes:
 
 * Trees 
-* Kernel Ridge regression (a.k.a. penalized reproducing kernel Hilbert space (RKHS) regression or (the mean of) Gaussian process regression)
+* Reproducing kernel Hilbert space (RKHS) ridge regression functions (i.e., posterior means of Gaussian processes)
 * A combination of the two (i.e., the KTBoost algorithm) 
 
 
 Concerning the **optimization** step for finding the boosting updates, the package supports:
 
 * Gradient descent
-* Newton-Rahson method (if applicable)
+* Newton method (if applicable)
 * A hybrid version of the two for trees as base learners
 
 
 The package implements the following **loss functions**:
 
-* **Continuous data** ("regression"): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian log-likelihood with both the mean and the standard deviation as functions of features
-* **Count data** ("regression"): Poisson regression loss
-* (Unorderd) **Categorical data** ("classification"): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax
-* **Mixed continuous-categorical data** ("censored regression"): negative Tobit likelihood (i.e., the Grabit model)
+ * Continuous data ("regression"): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian log-likelihood with both the mean and the standard deviation as functions of features
+* Count data ("regression"): Poisson regression loss
+* (Unorderd) Categorical data ("classification"): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax
+* Mixed continuous-categorical data ("censored regression"): negative Tobit likelihood (i.e., the Grabit model)
 
 
 

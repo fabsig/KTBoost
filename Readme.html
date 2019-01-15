@@ -132,21 +132,21 @@ $(document).ready(function () {
 <p>Concerning <strong>base learners</strong>, KTboost includes:</p>
 <ul>
 <li>Trees</li>
-<li>Kernel Ridge regression (a.k.a. penalized reproducing kernel Hilbert space (RKHS) regression or (the mean of) Gaussian process regression)</li>
+<li>Reproducing kernel Hilbert space (RKHS) ridge regression functions (i.e., posterior means of Gaussian processes)</li>
 <li>A combination of the two (i.e., the KTBoost algorithm)</li>
 </ul>
 <p>Concerning the <strong>optimization</strong> step for finding the boosting updates, the package supports:</p>
 <ul>
 <li>Gradient descent</li>
-<li>Newton-Rahson method (if applicable)</li>
+<li>Newton method (if applicable)</li>
 <li>A hybrid version of the two for trees as base learners</li>
 </ul>
 <p>The package implements the following <strong>loss functions</strong>:</p>
 <ul>
-<li><strong>Continuous data</strong> (“regression”): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian log-likelihood with both the mean and the standard deviation as functions of features</li>
-<li><strong>Count data</strong> (“regression”): Poisson regression loss</li>
-<li>(Unorderd) <strong>Categorical data</strong> (“classification”): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax</li>
-<li><strong>Mixed continuous-categorical data</strong> (“censored regression”): negative Tobit likelihood (i.e., the Grabit model)</li>
+<li>Continuous data (“regression”): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian log-likelihood with both the mean and the standard deviation as functions of features</li>
+<li>Count data (“regression”): Poisson regression loss</li>
+<li>(Unorderd) Categorical data (“classification”): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax</li>
+<li>Mixed continuous-categorical data (“censored regression”): negative Tobit likelihood (i.e., the Grabit model)</li>
 </ul>
 </div>
 <div id="installation" class="section level2">
