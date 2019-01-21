@@ -1,3 +1,4 @@
+README.md
 setup.py
 KTBoost/KTBoost.py
 KTBoost/__init__.py
