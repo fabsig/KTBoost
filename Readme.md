@@ -55,15 +55,18 @@ import KTBoost.KTBoost as KTBoost
 ## Standard tree boosting for regression with quadratic loss and hybrid gradient-Newton updates as in Friedman (2001)
 model = KTBoost.BoostingRegressor(loss='ls')
 
+
 ##################
 ## Train models ##
 ##################
 model.fit(Xtrain,ytrain)
 
+
 ######################
 ## Make predictions ##
 ######################
 model.predict(Xpred)
+
 
 #############################
 ## More examples of models ##
@@ -91,6 +94,34 @@ model = KTBoost.BoostingRegressor(loss='ls',base_learner='kernel',nystroem=True,
 ## on the covariates / features
 model = KTBoost.BoostingRegressor(loss='msr')
 
+
+#########################
+## Feature importances ## (only defined for trees as base learners)
+#########################
+Xtrain=np.random.rand(1000,10)
+ytrain=2*Xtrain[:,0]+2*Xtrain[:,1]+np.random.rand(1000)
+
+model = KTBoost.BoostingRegressor()
+model.fit(Xtrain,ytrain)
+## Extract feature importances calculated as described in Friedman (2001)
+feat_imp = model.feature_importances_
+## Alternatively, plot feature importances directly
+KTBoost.plot_feature_importances(model=model,feature_names=feature_names,maxFeat=10)
+
+
+##############################
+## Partial dependence plots ## (currently only implemented for trees as base learners)
+##############################
+from KTBoost.partial_dependence import plot_partial_dependence
+import matplotlib.pyplot as plt
+features = [0,1,2,3,4,5]
+fig, axs = plot_partial_dependence(model,Xtrain,features,percentiles=(0,1),figsize=(8,6))
+plt.subplots_adjust(top=0.9)
+fig.suptitle('Partial dependence plots')
+## Alternatively, get partial dependencies in numerical form
+from KTBoost.partial_dependence import partial_dependence
+kwargs = dict(X=Xtrain, percentiles=(0, 1))
+partial_dependence(model,[0],**kwargs)
 ```
 
 ## Author

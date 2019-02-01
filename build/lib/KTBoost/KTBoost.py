@@ -50,7 +50,6 @@ from scipy.special import expit
 
 from time import time
 from sklearn.model_selection import train_test_split
-#from sklearn.tree.tree import DecisionTreeRegressor
 import kernel_ridge as kr_sp
 from tree import DecisionTreeRegressor
 from scipy import sparse as sparse
@@ -74,6 +73,8 @@ from sklearn.utils.validation import check_is_fitted
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.exceptions import NotFittedError
 
+import matplotlib.pyplot as plt
+    
 MAX_VAL_PRED=1e30
 MAX_VAL_LOGPRED=19*np.log(10)
 
@@ -1916,6 +1917,12 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         -------
         feature_importances_ : array, shape = [n_features]
         """
+        
+        if not self.base_learner == "tree":
+            raise ValueError("Feature importances are only "
+                             "defined for trees as base "
+                             "learners. Use option 'base_learner=\"tree\"'.")
+        
         self._check_initialized()
 
         total_sum = np.zeros((self.n_features_, ), dtype=np.float64)
@@ -2839,3 +2846,63 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
         leaves = super(BoostingRegressor, self).apply(X)
         leaves = leaves.reshape(X.shape[0], self.estimators_.shape[0])
         return leaves
+
+def plot_feature_importances(model,feature_names=None,maxFeat=None,
+                             title='Feature importances',xlab='Features', 
+                             ax=None, **fig_kw):
+    """Creates a plot with feature importances calculated as described in 
+    Friedman (2001)
+
+    Parameters
+    ----------
+    model : BaseBoosting
+        A fitted boosting model.
+    feature_names : seq of str or one dimensional numpy array, default None
+        Name of each feature; feature_names[i] holds
+        the name of the feature with index i.
+    maxFeat : int, default None
+        The maximal number of features to be plotted
+    ax : Matplotlib axis object, default None
+        An axis object onto which the plots will be drawn.
+    **fig_kw : dict
+        Dict with keywords passed to the figure() call.
+        Note that all keywords not recognized above will be automatically
+        included here.
+        
+    Examples
+    --------
+    >>> Xtrain=np.random.rand(1000,10)
+    >>> ytrain=2*Xtrain[:,0]+2*Xtrain[:,1]+np.random.rand(1000)
+    >>> model = KTBoost.BoostingRegressor()
+    >>> model.fit(Xtrain,ytrain)
+    >>> feat_imp = model.feature_importances_ ## Extract feature importances
+    >>> ## Alternatively, plot feature importances directly
+    >>> KTBoost.plot_feature_importances(model=model,
+                                         feature_names=feature_names,
+                                         maxFeat=10)
+    """
+    if not isinstance(model, BaseBoosting):
+        raise ValueError('model has to be an instance of BaseBoosting')
+    check_is_fitted(model, 'estimators_')
+    feature_importances=model.feature_importances_
+    if feature_names is None: feature_names=np.array(range(0,len(feature_importances)))
+    if not isinstance(feature_names, np.ndarray): feature_names = np.array(feature_names)
+    order = feature_importances.argsort()[::-1][:len(feature_importances)]
+    if not maxFeat is None: order = order[:maxFeat]
+    feature_importances = feature_importances[order]
+    feature_names = feature_names[order]
+    
+    if ax is None:
+        fig = plt.figure(**fig_kw)
+    else:
+        fig = ax.get_figure()
+        fig.clear()
+        
+    auxindex = np.arange(len(feature_importances))
+    plt.bar(auxindex, feature_importances, color='black', alpha=0.5)
+    plt.xlabel(xlab, fontsize=18)
+    plt.ylabel('Importance', fontsize=18)
+    plt.title(title, fontsize=20)
+    plt.xticks(auxindex, feature_names,rotation=90, fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.tight_layout()
