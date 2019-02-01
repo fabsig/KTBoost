@@ -105,6 +105,7 @@ model = KTBoost.BoostingRegressor()
 model.fit(Xtrain,ytrain)
 ## Extract feature importances calculated as described in Friedman (2001)
 feat_imp = model.feature_importances_
+
 ## Alternatively, plot feature importances directly
 KTBoost.plot_feature_importances(model=model,feature_names=feature_names,maxFeat=10)
 
@@ -118,6 +119,7 @@ features = [0,1,2,3,4,5]
 fig, axs = plot_partial_dependence(model,Xtrain,features,percentiles=(0,1),figsize=(8,6))
 plt.subplots_adjust(top=0.9)
 fig.suptitle('Partial dependence plots')
+
 ## Alternatively, get partial dependencies in numerical form
 from KTBoost.partial_dependence import partial_dependence
 kwargs = dict(X=Xtrain, percentiles=(0, 1))
