@@ -11,6 +11,7 @@ randomized trees. Single and multi-output problems are both handled.
 #          Joly Arnaud <arnaud.v.joly@gmail.com>
 #          Fares Hedayati <fares.hedayati@gmail.com>
 #          Nelson Liu <nelson@nelsonliu.me>
+#          Fabio Sigrist (fabiosigrist@gmail.com)
 #
 # License: BSD 3 clause
 
@@ -236,8 +237,8 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
         if len(y) != n_samples:
             raise ValueError("Number of labels=%d does not match "
                              "number of samples=%d" % (len(y), n_samples))
-        if not 0 <= self.min_weight_fraction_leaf <= 0.5:
-            raise ValueError("min_weight_fraction_leaf must in [0, 0.5]")
+        if not 0 <= self.min_weight_fraction_leaf <= 1:
+            raise ValueError("min_weight_fraction_leaf must be in [0, 1]")
         if max_depth <= 0:
             raise ValueError("max_depth must be greater than zero. ")
         if not (0 < max_features <= self.n_features_):
