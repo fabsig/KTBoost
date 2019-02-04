@@ -73,6 +73,8 @@ from sklearn.utils.validation import check_is_fitted
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.exceptions import NotFittedError
 
+import warnings
+
 import matplotlib.pyplot as plt
     
 MAX_VAL_PRED=1e30
@@ -1328,8 +1330,8 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                 # no inplace multiplication!
                 weights = weights * sample_mask.astype(np.float64)
             
-            if self.update_step=="newton":
-                self.min_weight_fraction_leaf = self.min_weight_leaf / np.sum(weights)
+#            if self.update_step=="newton":
+#                self.min_weight_fraction_leaf = self.min_weight_leaf / np.sum(weights)
 
             """
             Calculate estimators
@@ -1678,6 +1680,12 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
 
         self._check_params()
 
+        if (self.loss == "msr") & (self.min_samples_leaf==1) & (self.update_step in ["gradient", "hybrid"]):
+            warnings.warn("Warning: Minimum number of samples per leaf should be larger than 1 " 
+                          "for mean-scale regression.")
+        if (self.loss == "msr") & (self.min_weight_leaf==1.)  & (self.update_step=="newton"):
+            warnings.warn("Warning: Minimum number of weighted samples per leaf should be larger " 
+                          "than 1 for mean-scale regression.")
         if (len(y)<self.n_neighbors) & (not self.n_neighbors == np.inf):
             raise ValueError("Number of neighbors is larger than number of samples.")
 
@@ -1739,7 +1747,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         n_trees = self.number_estimators[self.n_estimators-1][0]
         n_kernel = self.number_estimators[self.n_estimators-1][1]
         if not self.base_learner in ["tree","kernel"]:
-            print("Number of trees="+str(n_trees)+", number of kernel updates="+str(n_kernel))
+            print("Number of trees="+str(n_trees)+", number of kernel functions="+str(n_kernel))
         # change shape of arrays after fit (early-stopping or additional iterations)
         if n_trees != self.estimators_.shape[0]:
             self.estimators_ = self.estimators_[:n_trees]
