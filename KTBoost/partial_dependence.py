@@ -174,7 +174,7 @@ def plot_partial_dependence(model, X, features, feature_names=None,
                             label=None, n_cols=3, grid_resolution=100,
                             percentiles=(0.05, 0.95), n_jobs=None,
                             verbose=0, ax=None, line_kw=None,
-                            contour_kw=None, **fig_kw):
+                            contour_kw=None, same_y_scale=True, **fig_kw):
     """Partial dependence plots for ``features``.
 
     The ``len(features)`` plots are arranged in a grid with ``n_cols``
@@ -401,7 +401,7 @@ def plot_partial_dependence(model, X, features, feature_names=None,
         else:
             ax.set_ylabel('Partial dependence')
 
-        if len(axes) == 1:
+        if (len(axes) == 1) & same_y_scale:
             ax.set_ylim(pdp_lim[1])
         axs.append(ax)
 
