@@ -224,6 +224,8 @@ def plot_partial_dependence(model, X, features, feature_names=None,
     contour_kw : dict
         Dict with keywords passed to the ``matplotlib.pyplot.plot`` call.
         For two-way partial dependence plots.
+    same_y_scale : boolean, default=True
+        Indicate where the same range should be used for all y-scales.
     **fig_kw : dict
         Dict with keywords passed to the figure() call.
         Note that all keywords not recognized above will be automatically
