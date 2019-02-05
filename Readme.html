@@ -154,35 +154,36 @@ $(document).ready(function () {
 <p>It can be <strong>installed</strong> using</p>
 <pre><code>pip install -U KTBoost</code></pre>
 <p>and then loaded using</p>
-<pre><code>import KTBoost.KTBoost as KTBoost</code></pre>
+<pre class="python"><code>import KTBoost.KTBoost as KTBoost</code></pre>
 </div>
 <div id="usage-and-examples" class="section level2">
 <h2>Usage and examples</h2>
-<p>The package re-uses code from scikit-learn and its workflow is very similar to that of scikit-learn.</p>
+<p>The package is build as an extension of the scikit-learn implementation of boosting algorithms and its workflow is very similar to that of scikit-learn.</p>
 <p>The two main classes are <code>KTBoost.BoostingClassifier</code> and <code>KTBoost.BoostingRegressor</code>.</p>
-<p>The following <strong>code example</strong> defines models, trains them, and makes predictions.</p>
+<p>The following <strong>code examples</strong> show how the package can be used.</p>
+<div id="define-models-train-models-make-predictions" class="section level4">
+<h4>Define models, train models, make predictions</h4>
 <pre class="python"><code>import KTBoost.KTBoost as KTBoost
 
 ################################################
 ## Define model (see below for more examples) ##
 ################################################
-## Standard tree boosting for regression with quadratic loss and hybrid gradient-Newton updates as in Friedman (2001)
+## Standard tree-boosting for regression with quadratic loss and hybrid gradient-Newton updates as in Friedman (2001)
 model = KTBoost.BoostingRegressor(loss='ls')
-
 
 ##################
 ## Train models ##
 ##################
 model.fit(Xtrain,ytrain)
 
-
 ######################
 ## Make predictions ##
 ######################
-model.predict(Xpred)
-
-
-#############################
+model.predict(Xpred)</code></pre>
+</div>
+<div id="more-examples-of-models" class="section level4">
+<h4>More examples of models</h4>
+<pre class="python"><code>#############################
 ## More examples of models ##
 #############################
 ## Boosted Tobit model, i.e. Grabit model (Sigrist and Hirnschall, 2017), 
@@ -206,10 +207,11 @@ model = KTBoost.BoostingRegressor(loss='ls',base_learner='kernel',nystroem=True,
                                   n_components=1000,theta=None,n_neighbors=100)
 ## Regression model where both the mean and the standard deviation depend 
 ## on the covariates / features
-model = KTBoost.BoostingRegressor(loss='msr')
-
-
-#########################
+model = KTBoost.BoostingRegressor(loss='msr')</code></pre>
+</div>
+<div id="feature-importances-and-partial-dependence-plots" class="section level4">
+<h4>Feature importances and partial dependence plots</h4>
+<pre class="python"><code>#########################
 ## Feature importances ## (only defined for trees as base learners)
 #########################
 Xtrain=np.random.rand(1000,10)
@@ -222,7 +224,6 @@ feat_imp = model.feature_importances_
 
 ## Alternatively, plot feature importances directly
 KTBoost.plot_feature_importances(model=model,feature_names=feature_names,maxFeat=10)
-
 
 ##############################
 ## Partial dependence plots ## (currently only implemented for trees as base learners)
@@ -238,6 +239,7 @@ fig.suptitle('Partial dependence plots')
 from KTBoost.partial_dependence import partial_dependence
 kwargs = dict(X=Xtrain, percentiles=(0, 1))
 partial_dependence(model,[0],**kwargs)</code></pre>
+</div>
 </div>
 <div id="author" class="section level2">
 <h2>Author</h2>

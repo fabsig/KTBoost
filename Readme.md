@@ -35,39 +35,41 @@ It can be **installed** using
 pip install -U KTBoost
 ```
 and then loaded using 
-```
+```python
 import KTBoost.KTBoost as KTBoost
 ```
 
 ## Usage and examples
-The package re-uses code from scikit-learn and its workflow is very similar to that of scikit-learn.
+The package is build as an extension of the scikit-learn implementation of boosting algorithms and its workflow is very similar to that of scikit-learn.
 
 The two main classes are `KTBoost.BoostingClassifier` and `KTBoost.BoostingRegressor`. 
 
-The following **code example** defines models, trains them, and makes predictions.
+The following **code examples** show how the package can be used.
 
+
+#### Define models, train models, make predictions
 ```python
 import KTBoost.KTBoost as KTBoost
 
 ################################################
 ## Define model (see below for more examples) ##
 ################################################
-## Standard tree boosting for regression with quadratic loss and hybrid gradient-Newton updates as in Friedman (2001)
+## Standard tree-boosting for regression with quadratic loss and hybrid gradient-Newton updates as in Friedman (2001)
 model = KTBoost.BoostingRegressor(loss='ls')
-
 
 ##################
 ## Train models ##
 ##################
 model.fit(Xtrain,ytrain)
 
-
 ######################
 ## Make predictions ##
 ######################
 model.predict(Xpred)
+```
 
-
+#### More examples of models
+```python
 #############################
 ## More examples of models ##
 #############################
@@ -93,8 +95,10 @@ model = KTBoost.BoostingRegressor(loss='ls',base_learner='kernel',nystroem=True,
 ## Regression model where both the mean and the standard deviation depend 
 ## on the covariates / features
 model = KTBoost.BoostingRegressor(loss='msr')
+```
 
-
+#### Feature importances and partial dependence plots
+```python
 #########################
 ## Feature importances ## (only defined for trees as base learners)
 #########################
@@ -108,7 +112,6 @@ feat_imp = model.feature_importances_
 
 ## Alternatively, plot feature importances directly
 KTBoost.plot_feature_importances(model=model,feature_names=feature_names,maxFeat=10)
-
 
 ##############################
 ## Partial dependence plots ## (currently only implemented for trees as base learners)
