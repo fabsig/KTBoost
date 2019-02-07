@@ -79,6 +79,7 @@ import matplotlib.pyplot as plt
     
 MAX_VAL_PRED=1e30
 MAX_VAL_LOGPRED=19*np.log(10)
+MIN_VAL_HESSIAN=1e-20
 
 class QuantileEstimator(object):
     """An estimator predicting the alpha-quantile of the training targets."""
@@ -1321,7 +1322,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
             if self.update_step=="newton":
                 hessian = loss.hessian(y=y, pred=y_pred, residual=residual, 
                                        k=k, sample_weight=weights)
-                hessian[hessian < 1e-20] = 1e-20
+                hessian[hessian < MIN_VAL_HESSIAN] = MIN_VAL_HESSIAN
                 weights = weights * hessian
                 residual = residual / hessian
                 weights = (weights / np.sum(weights) * len(weights))
@@ -1683,9 +1684,9 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         if (self.loss == "msr") & (self.min_samples_leaf==1) & (self.update_step in ["gradient", "hybrid"]):
             warnings.warn("Warning: Minimum number of samples per leaf should be larger than 1 " 
                           "for mean-scale regression.")
-        if (self.loss == "msr") & (self.min_weight_leaf==1.)  & (self.update_step=="newton"):
-            warnings.warn("Warning: Minimum number of weighted samples per leaf should be larger " 
-                          "than 1 for mean-scale regression.")
+#        if (self.loss == "msr") & (self.min_weight_leaf==1.)  & (self.update_step=="newton"):
+#            warnings.warn("Warning: Minimum number of weighted samples per leaf should be larger " 
+#                          "than 1 for mean-scale regression.")
         if (len(y)<self.n_neighbors) & (not self.n_neighbors == np.inf):
             raise ValueError("Number of neighbors is larger than number of samples.")
 
