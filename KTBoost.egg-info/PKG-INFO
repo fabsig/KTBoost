@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: KTBoost
-Version: 0.1.0
+Version: 0.1.1
 Summary: Implements several boosting algorithms in Python
 Home-page: https://github.com/fabsig/KTBoost
 Author: Fabio Sigrist
@@ -142,10 +142,10 @@ Description: # KTBoost - A Python Package for Boosting
         
         ## References
         
-        * Friedman, J., Hastie, T., & Tibshirani, R. (2000). Additive logistic regression: a statistical view of boosting. The annals of statistics, 28(2), 337-407.
-        * Friedman, J. H. (2001). Greedy function approximation: a gradient boosting machine. Annals of statistics, 1189-1232.
-        * Sigrist, F. (2018). Gradient and Newton Boosting for Classification and Regression. arXiv preprint arXiv:1808.03064.
+        * Friedman, J. H. (2001). Greedy function approximation: a gradient boosting machine. The annals of statistics, 1189-1232.
         * Sigrist, F., & Hirnschall, C. (2017). Grabit: Gradient Tree Boosted Tobit Models for Default Prediction. arXiv preprint arXiv:1711.08695.
+        * Sigrist, F. (2018). Gradient and Newton Boosting for Classification and Regression. arXiv preprint arXiv:1808.03064.
+        * Sigrist, F. (2019). KTBoost: Combined Kernel and Tree Boosting. arXiv preprint arXiv:1902.03999.
 Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 2.7
 Classifier: Programming Language :: Python :: 3

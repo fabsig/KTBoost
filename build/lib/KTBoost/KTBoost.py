@@ -18,7 +18,8 @@ The module structure is the following:
 """
 
 # Authors: Fabio Sigrist (fabiosigrist@gmail.com)
-# (the module re-uses code from scikit-learn)
+# (and authors from the scikit-learn implementation of boosting
+#  as this module extends the scikit-learn functionality on boosting)
 # License: BSD 3 clause
 
 from __future__ import print_function
@@ -2237,17 +2238,8 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
     split. To obtain a deterministic behaviour during fitting,
     ``random_state`` has to be fixed.
 
-    See also
-    --------
-    sklearn.tree.DecisionTreeClassifier, RandomForestClassifier
-    AdaBoostClassifier
-
     References
     ----------
-    Friedman, J., Hastie, T., & Tibshirani, R. (2000). Additive logistic 
-    regression: a statistical view of boosting. The annals of statistics, 
-    28(2), 337-407.
-    
     Friedman, J. H. (2001). Greedy function approximation: a gradient boosting
     machine. Annals of statistics, 1189-1232.
     
@@ -2256,6 +2248,9 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
     
     Sigrist, F. (2018). Gradient and Newton Boosting for Classification and
     Regression. arXiv preprint arXiv:1808.03064.
+    
+    Sigrist, F. (2019). KTBoost: Combined Kernel and Tree Boosting. arXiv 
+    preprint arXiv:1902.03999.
     """
 
     _SUPPORTED_LOSS = ('deviance', 'exponential')
@@ -2737,16 +2732,8 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
     split. To obtain a deterministic behaviour during fitting,
     ``random_state`` has to be fixed.
 
-    See also
-    --------
-    DecisionTreeRegressor, RandomForestRegressor
-
     References
     ----------
-    Friedman, J., Hastie, T., & Tibshirani, R. (2000). Additive logistic 
-    regression: a statistical view of boosting. The annals of statistics, 
-    28(2), 337-407.
-    
     Friedman, J. H. (2001). Greedy function approximation: a gradient boosting
     machine. Annals of statistics, 1189-1232.
     
@@ -2755,6 +2742,9 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
     
     Sigrist, F. (2018). Gradient and Newton Boosting for Classification and
     Regression. arXiv preprint arXiv:1808.03064.
+    
+    Sigrist, F. (2019). KTBoost: Combined Kernel and Tree Boosting. arXiv 
+    preprint arXiv:1902.03999.
     """
 
     _SUPPORTED_LOSS = ('ls', 'lad', 'huber', 'quantile', 'tobit', 'poisson',
