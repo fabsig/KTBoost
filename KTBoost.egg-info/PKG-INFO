@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: KTBoost
-Version: 0.1.2
+Version: 0.1.3
 Summary: Implements several boosting algorithms in Python
 Home-page: https://github.com/fabsig/KTBoost
 Author: Fabio Sigrist
@@ -200,17 +200,17 @@ Description: # KTBoost - A Python Package for Boosting
               
         * **min_weight_leaf** : float, optional (default=1.)
         
-              The minimum number of weighted samples required to be at a leaf node.
-              If Newton boosting is used, this corresponds to the equivalent (i.e.,
-              normalized) number of weighted samples where the weights are determined
-              based on the second derivatives / Hessians.
+            The minimum number of weighted samples required to be at a leaf node.
+            If Newton boosting is used, this corresponds to the equivalent (i.e.,
+            normalized) number of weighted samples where the weights are determined
+            based on the second derivatives / Hessians.
         
         * **criterion** : string, optional (default="mse")
         
-                The function to measure the quality of a split. Supported criteria
-                are "friedman_mse" for the mean squared error with improvement
-                score by Friedman, "mse" for mean squared error, and "mae" for
-                the mean absolute error.
+            The function to measure the quality of a split. Supported criteria
+            are "friedman_mse" for the mean squared error with improvement
+            score by Friedman, "mse" for mean squared error, and "mae" for
+            the mean absolute error.
               
         * **random_state** : int, RandomState instance or None, optional (default=None)
         

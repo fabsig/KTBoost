@@ -272,7 +272,7 @@ partial_dependence(model,[0],**kwargs)</code></pre>
 <li><p><strong>n_estimators</strong> : int (default=100)</p>
 <p>The number of boosting iterations to perform.</p></li>
 <li><p><strong>max_depth</strong> : integer, optional (default=5)</p>
-<p>Maximum depth of the regression trees. The maximum depth limits the number of nodes in the tree. Tune this parameter for best performance. This value determines the interaction of the predictor variables.</p></li>
+<p>Maximum depth of the regression trees. The maximum depth limits the number of nodes in the tree. This value determines the interaction of the predictor variables.</p></li>
 <li><p><strong>min_samples_leaf</strong> : int, float, optional (default=1)</p>
 <p>The minimum number of samples required to be at a leaf node:</p>
 <ul>
@@ -282,10 +282,7 @@ partial_dependence(model,[0],**kwargs)</code></pre>
 <li><p><strong>min_weight_leaf</strong> : float, optional (default=1.)</p>
 <p>The minimum number of weighted samples required to be at a leaf node. If Newton boosting is used, this corresponds to the equivalent (i.e., normalized) number of weighted samples where the weights are determined based on the second derivatives / Hessians.</p></li>
 <li><p><strong>criterion</strong> : string, optional (default=“mse”)</p>
-<pre><code>The function to measure the quality of a split. Supported criteria
-are &quot;friedman_mse&quot; for the mean squared error with improvement
-score by Friedman, &quot;mse&quot; for mean squared error, and &quot;mae&quot; for
-the mean absolute error.</code></pre></li>
+<p>The function to measure the quality of a split. Supported criteria are “friedman_mse” for the mean squared error with improvement score by Friedman, “mse” for mean squared error, and “mae” for the mean absolute error.</p></li>
 <li><p><strong>random_state</strong> : int, RandomState instance or None, optional (default=None)</p>
 <p>If int, random_state is the seed used by the random number generator; If RandomState instance, random_state is the random number generator; If None, the random number generator is the RandomState instance used by <code>np.random</code>.</p></li>
 <li><p><strong>kernel</strong> : string, default=“rbf”</p>
