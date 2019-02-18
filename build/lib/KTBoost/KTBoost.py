@@ -360,7 +360,7 @@ class LossFunction(six.with_metaclass(ABCMeta, object)):
         sample_mask : ndarray, shape=(n,)
             The sample mask to be used.
         learning_rate : float, default=0.1
-            learning rate shrinks the contribution of each tree by
+            learning rate shrinks the contribution of each base learner by
              ``learning_rate``.
         k : int, default 0
             The index of the estimator being updated.
@@ -1253,9 +1253,9 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
     def __init__(self, loss, learning_rate, n_estimators, criterion,
                  min_samples_split, min_samples_leaf, min_weight_fraction_leaf,
                  min_weight_leaf, max_depth, min_impurity_decrease, 
-                 min_impurity_split, init, subsample, max_features,
-                 random_state, alpha=0.9, verbose=0, max_leaf_nodes=None,
-                 warm_start=False, presort='auto', validation_fraction=0.1, 
+                 init, subsample, max_features, random_state, alpha=0.9, 
+                 verbose=0, max_leaf_nodes=None, warm_start=False, 
+                 presort='auto', validation_fraction=0.1, 
                  n_iter_no_change=None, tol=1e-4, sigma=1., yl=0., yu=1., gamma=1,
                  update_step="hybrid", base_learner="tree", kernel="rbf", scaleX=False, 
                  theta=1, n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=0.,
@@ -1273,7 +1273,6 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         self.max_features = max_features
         self.max_depth = max_depth
         self.min_impurity_decrease = min_impurity_decrease
-        self.min_impurity_split = min_impurity_split
         self.init = init
         self.random_state = random_state
         self.alpha = alpha
@@ -1349,7 +1348,6 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                     min_weight_fraction_leaf=self.min_weight_fraction_leaf,
                     min_weight_leaf=self.min_weight_leaf,
                     min_impurity_decrease=self.min_impurity_decrease,
-                    min_impurity_split=self.min_impurity_split,
                     max_features=self.max_features,
                     max_leaf_nodes=self.max_leaf_nodes,
                     random_state=random_state,
@@ -1577,7 +1575,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                                              dtype=np.float64)
 
     def _clear_state(self):
-        """Clear the state of the gradient boosting model. """
+        """Clear the state of the boosting model. """
         if hasattr(self, 'estimators_'):
             self.estimators_ = np.empty((0, 0), dtype=np.object)
         if hasattr(self, 'train_score_'):
@@ -1621,7 +1619,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         return self.n_features_
 
     def fit(self, X, y, sample_weight=None, monitor=None):
-        """Fit the gradient boosting model.
+        """Fit the boosting model.
 
         Parameters
         ----------
@@ -1995,41 +1993,32 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
     Parameters
     ----------
     loss : {'deviance', 'exponential'}, optional (default='deviance')
-        loss function to be optimized. 'deviance' refers to
-        deviance (= logistic regression) for classification
-        with probabilistic outputs. For loss 'exponential' gradient
-        boosting recovers the AdaBoost algorithm.
+        loss function to be optimized. 'deviance' refers to the logistic 
+        regression loss for binary classification, and the cross-entropy loss
+        with the softmax function for multiclass classification.
+    
+    update_step : string, default="hybrid"
+        Defines how boosting updates are calculated. Use either "gradient" for gradient boosting
+        or "newton" for Newton boosting (if applicable). "hybrid" uses a gradient step for finding the structure
+        of trees and a Newton step for finding the leaf values. For kernel boosting, "hybrid" uses
+        gradient descent.
+
+    base_learner : string, default="tree"
+        Base learners used in boosting updates. Choose among "tree" for trees, 
+        "kernel" for reproducing kernel Hilbert space (RKHS) regression
+        functions, and "combined" for a combination of the two.
 
     learning_rate : float, optional (default=0.1)
-        learning rate shrinks the contribution of each tree by `learning_rate`.
+        learning rate shrinks the contribution of each base learner by `learning_rate`.
         There is a trade-off between learning_rate and n_estimators.
 
     n_estimators : int (default=100)
-        The number of boosting stages to perform. Gradient boosting
-        is fairly robust to over-fitting so a large number usually
-        results in better performance.
+        The number of boosting stages to perform.
 
-    max_depth : integer, optional (default=3)
-        maximum depth of the individual regression estimators. The maximum
-        depth limits the number of nodes in the tree. Tune this parameter
-        for best performance; the best value depends on the interaction
-        of the input variables.
-
-    criterion : string, optional (default="friedman_mse")
-        The function to measure the quality of a split. Supported criteria
-        are "friedman_mse" for the mean squared error with improvement
-        score by Friedman, "mse" for mean squared error, and "mae" for
-        the mean absolute error. The default value of "friedman_mse" is
-        generally the best as it can provide a better approximation in
-        some cases.
-
-    min_samples_split : int, float, optional (default=2)
-        The minimum number of samples required to split an internal node:
-
-        - If int, then consider `min_samples_split` as the minimum number.
-        - If float, then `min_samples_split` is a percentage and
-          `ceil(min_samples_split * n_samples)` are the minimum
-          number of samples for each split.
+    max_depth : integer, optional (default=5)
+        Maximum depth of the regression trees. The maximum
+        depth limits the number of nodes in the tree. This value determines 
+        the interaction of the predictor variables.
 
     min_samples_leaf : int, float, optional (default=1)
         The minimum number of samples required to be at a leaf node:
@@ -2039,10 +2028,30 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
           `ceil(min_samples_leaf * n_samples)` are the minimum
           number of samples for each node.
 
+    min_weight_leaf : float, optional (default=1.)
+        The minimum number of weighted samples required to be at a leaf node.
+        If Newton boosting is used, this corresponds to the equivalent (i.e.,
+        normalized) number of weighted samples where the weights are determined
+        based on the second derivatives / Hessians.
+
     min_weight_fraction_leaf : float, optional (default=0.)
         The minimum weighted fraction of the sum total of weights (of all
         the input samples) required to be at a leaf node. Samples have
         equal weight when sample_weight is not provided.
+
+    min_samples_split : int, float, optional (default=2)
+        The minimum number of samples required to split an internal node:
+
+        - If int, then consider `min_samples_split` as the minimum number.
+        - If float, then `min_samples_split` is a percentage and
+          `ceil(min_samples_split * n_samples)` are the minimum
+          number of samples for each split.
+
+    criterion : string, optional (default="mse")
+        The function to measure the quality of a split. Supported criteria
+        are "friedman_mse" for the mean squared error with improvement
+        score by Friedman, "mse" for mean squared error, and "mae" for
+        the mean absolute error.
 
     subsample : float, optional (default=1.0)
         The fraction of samples to be used for fitting the individual base
@@ -2074,15 +2083,6 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
         Grow trees with ``max_leaf_nodes`` in best-first fashion.
         Best nodes are defined as relative reduction in impurity.
         If None then unlimited number of leaf nodes.
-
-    min_impurity_split : float,
-        Threshold for early stopping in tree growth. A node will split
-        if its impurity is above the threshold, otherwise it is a leaf.
-
-        .. deprecated:: 0.19
-           ``min_impurity_split`` has been deprecated in favor of
-           ``min_impurity_decrease`` in 0.19 and will be removed in 0.21.
-           Use ``min_impurity_decrease`` instead.
 
     min_impurity_decrease : float, optional (default=0.)
         A node will be split if this split induces a decrease of the impurity
@@ -2145,29 +2145,19 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
         Tolerance for the early stopping. When the loss is not improving
         by at least tol for ``n_iter_no_change`` iterations (if set to a
         number), the training stops.
-        
-    update_step: string, default="hybrid"
-        Defines how boosting updates are calculated. Use either "gradient" for gradient boosting
-        or "newton" for Newton boosting. "hybrid" uses a gradient step for finding the structure
-        of trees and a Newton step for finding the leaf values. For kernel boosting, "hybrid" uses
-        gradient descent.
 
-    base_learner: string, default="tree"
-        Base learners used in boosting updates. Choose among "tree" for trees, "kernel" for 
-        kernel ridge regression, and "combined" for a combination of the two.
-
-    kernel: string, default="rbf"
+    kernel : string, default="rbf"
         Kernel function used for kernel boosting. Currently, supports "laplace", "rbf", and "GW" 
         (generalied Wendland with "smoothness parameter" mu=1).
 
-    scaleX: bool, default: False
+    scaleX : bool, default: False
         When set to ``True``, features are scaled to mean zero and variance one.
 
-    theta: float, default: 1.
+    theta : float, default: 1.
         Range parameter of the kernel functions which determines how fast the kernel function
         decays with distance.
 
-    n_neighbors: int, default: None
+    n_neighbors : int, default: None
         If the range parameter 'theta' is not given, it can be determined from the data using this
         parameter. The parameter 'theta' is chosen as the average distance of the 'n_neighbors' 
         nearest neighbors distances. The parameter 'range_adjust' can be used to modify this. 
@@ -2175,21 +2165,21 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
         decayed to essentially zero (0.05 or 0.01, respectively) at the average distance of the 
         'n_neighbors' nearest neighbors (for rbf and laplace kernel).
 
-    prctg_neighbors: float, default: None
+    prctg_neighbors : float, default: None
         Alternative way of specifying the number of nearest neighbors 'n_neighbors'.
         If n_neighbors=None, it is set to prctg_neighbors*n_samples where n_samples denotes the 
         number of training samples.
 
-    range_adjust: float, default: 1.
+    range_adjust : float, default: 1.
         See documentation on 'n_neighbors'.
 
-    alphaReg: float, default: 1.
+    alphaReg : float, default: 1.
         Regularization parameter for kernel Ridge regression boosting updates.
 
-    sparse: bool, default: False
+    sparse : bool, default: False
         When set to ``True``, sparse matrices are used (only meaningfull for kernel="GW").
         
-    nystroem: boolean, default=None
+    nystroem : boolean, default=None
         Indicates whether Nystroem sampling is used or not for kernel boosting.
 
     n_components : int, detault = 100
@@ -2256,11 +2246,10 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
     _SUPPORTED_LOSS = ('deviance', 'exponential')
 
     def __init__(self, loss='deviance', learning_rate=0.1, n_estimators=100,
-                 subsample=1.0, criterion='friedman_mse', min_samples_split=2,
+                 subsample=1.0, criterion='mse', min_samples_split=2,
                  min_samples_leaf=1, min_weight_fraction_leaf=0.,
-                 min_weight_leaf=1., max_depth=3, min_impurity_decrease=0.,
-                 min_impurity_split=None, init=None,
-                 random_state=None, max_features=None, verbose=0,
+                 min_weight_leaf=1., max_depth=5, min_impurity_decrease=0.,
+                 init=None, random_state=None, max_features=None, verbose=0,
                  max_leaf_nodes=None, warm_start=False,
                  presort='auto', validation_fraction=0.1,
                  n_iter_no_change=None, tol=1e-4, update_step="hybrid",
@@ -2274,8 +2263,8 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
             min_weight_fraction_leaf=min_weight_fraction_leaf, min_weight_leaf=min_weight_leaf,
             max_depth=max_depth, init=init, subsample=subsample, max_features=max_features,
             random_state=random_state, verbose=verbose, max_leaf_nodes=max_leaf_nodes,
-            min_impurity_decrease=min_impurity_decrease, min_impurity_split=min_impurity_split,
-            warm_start=warm_start, presort=presort, validation_fraction=validation_fraction,
+            min_impurity_decrease=min_impurity_decrease, warm_start=warm_start,
+            presort=presort, validation_fraction=validation_fraction,
             n_iter_no_change=n_iter_no_change, tol=tol, update_step=update_step, 
             base_learner=base_learner, kernel=kernel, scaleX=scaleX, theta=theta, 
             n_neighbors=n_neighbors, prctg_neighbors=prctg_neighbors, range_adjust=range_adjust,
@@ -2472,45 +2461,37 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
     ----------
     loss : {'ls', 'lad', 'huber', 'quantile', 'poisson', 'gamma', 'tobit', 
             'msr'}, optional (default='ls')
-        loss function to be optimized. 'ls' refers to least squares
-        regression. 'lad' (least absolute deviation) is a highly robust
+        loss function to be optimized. 'ls' refers to squared loss.
+        'lad' (least absolute deviation) is a highly robust
         loss function solely based on order information of the input
         variables. 'huber' is a combination of the two. 'quantile'
         allows quantile regression (use `alpha` to specify the quantile).
         'tobit' corresponds to a Tobit loss. 'msr' is a linear regression model
         where both the mean and the logarithm of the standard deviation are
         varying.
+        
+    update_step : string, default="hybrid"
+        Defines how boosting updates are calculated. Use either "gradient" for gradient boosting
+        or "newton" for Newton boosting (if applicable). "hybrid" uses a gradient step for finding the structure
+        of trees and a Newton step for finding the leaf values. For kernel boosting, "hybrid" uses
+        gradient descent.
+
+    base_learner : string, default="tree"
+        Base learners used in boosting updates. Choose among "tree" for trees, 
+        "kernel" for reproducing kernel Hilbert space (RKHS) regression
+        functions, and "combined" for a combination of the two.
 
     learning_rate : float, optional (default=0.1)
-        learning rate shrinks the contribution of each tree by `learning_rate`.
+        learning rate shrinks the contribution of each base learner by `learning_rate`.
         There is a trade-off between learning_rate and n_estimators.
 
     n_estimators : int (default=100)
-        The number of boosting stages to perform. Boosting
-        is fairly robust to over-fitting so a large number usually
-        results in better performance.
+        The number of boosting stages to perform.
 
-    max_depth : integer, optional (default=3)
-        maximum depth of the individual regression estimators. The maximum
-        depth limits the number of nodes in the tree. Tune this parameter
-        for best performance; the best value depends on the interaction
-        of the input variables.
-
-    criterion : string, optional (default="friedman_mse")
-        The function to measure the quality of a split. Supported criteria
-        are "friedman_mse" for the mean squared error with improvement
-        score by Friedman, "mse" for mean squared error, and "mae" for
-        the mean absolute error. The default value of "friedman_mse" is
-        generally the best as it can provide a better approximation in
-        some cases.
-
-    min_samples_split : int, float, optional (default=2)
-        The minimum number of samples required to split an internal node:
-
-        - If int, then consider `min_samples_split` as the minimum number.
-        - If float, then `min_samples_split` is a percentage and
-          `ceil(min_samples_split * n_samples)` are the minimum
-          number of samples for each split.
+    max_depth : integer, optional (default=5)
+        Maximum depth of the regression trees. The maximum
+        depth limits the number of nodes in the tree. This value determines 
+        the interaction of the predictor variables.
 
     min_samples_leaf : int, float, optional (default=1)
         The minimum number of samples required to be at a leaf node:
@@ -2520,10 +2501,30 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
           `ceil(min_samples_leaf * n_samples)` are the minimum
           number of samples for each node.
 
+    min_weight_leaf : float, optional (default=1.)
+        The minimum number of weighted samples required to be at a leaf node.
+        If Newton boosting is used, this corresponds to the equivalent (i.e.,
+        normalized) number of weighted samples where the weights are determined
+        based on the second derivatives / Hessians.
+
     min_weight_fraction_leaf : float, optional (default=0.)
         The minimum weighted fraction of the sum total of weights (of all
         the input samples) required to be at a leaf node. Samples have
         equal weight when sample_weight is not provided.
+
+    min_samples_split : int, float, optional (default=2)
+        The minimum number of samples required to split an internal node:
+
+        - If int, then consider `min_samples_split` as the minimum number.
+        - If float, then `min_samples_split` is a percentage and
+          `ceil(min_samples_split * n_samples)` are the minimum
+          number of samples for each split.
+
+    criterion : string, optional (default="mse")
+        The function to measure the quality of a split. Supported criteria
+        are "friedman_mse" for the mean squared error with improvement
+        score by Friedman, "mse" for mean squared error, and "mae" for
+        the mean absolute error.
 
     subsample : float, optional (default=1.0)
         The fraction of samples to be used for fitting the individual base
@@ -2555,15 +2556,6 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
         Grow trees with ``max_leaf_nodes`` in best-first fashion.
         Best nodes are defined as relative reduction in impurity.
         If None then unlimited number of leaf nodes.
-
-    min_impurity_split : float,
-        Threshold for early stopping in tree growth. A node will split
-        if its impurity is above the threshold, otherwise it is a leaf.
-
-        .. deprecated:: 0.19
-           ``min_impurity_split`` has been deprecated in favor of
-           ``min_impurity_decrease`` in 0.19 and will be removed in 0.21.
-           Use ``min_impurity_decrease`` instead.
 
     min_impurity_decrease : float, optional (default=0.)
         A node will be split if this split induces a decrease of the impurity
@@ -2631,44 +2623,34 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
         by at least tol for ``n_iter_no_change`` iterations (if set to a
         number), the training stops.
 
-    sigma: float, optional, default 1.
+    sigma : float, optional, default 1.
         Standard deviation of the latent variable in a Tobit model.
         This can be considered a tuning parameter for when doing
         gardient boosting.
 
-    yl: float, optional, default 0.
+    yl : float, optional, default 0.
         Lower limit of the Tobit model. If there is no lower censoring,
         simply set this parameter to a low value (lower than all data points)
 
-    yu: float, optional, default 1.
+    yu : float, optional, default 1.
         Upper limit of the Tobit model. If there is no upper censoring,
         simply set this parameter to a high value (higher than all data points)
 
-    gamma: float, default 1.
+    gamma : float, default 1.
         Shape parameter for gamma regression
 
-    update_step: string, default="hybrid"
-        Defines how boosting updates are calculated. Use either "gradient" for gradient boosting
-        or "newton" for Newton boosting. "hybrid" uses a gradient step for finding the structure
-        of trees and a Newton step for finding the leaf values. For kernel boosting, "hybrid" uses
-        gradient descent.
-
-    base_learner: string, default="tree"
-        Base learners used in boosting updates. Choose among "tree" for trees, "kernel" for 
-        kernel ridge regression, and "combined" for a combination of the two.
-
-    kernel: string, default="rbf"
+    kernel : string, default="rbf"
         Kernel function used for kernel boosting. Currently, supports "laplace", "rbf", and "GW" 
         (generalied Wendland with "smoothness parameter" mu=1).
 
-    scaleX: bool, default: False
+    scaleX : bool, default: False
         When set to ``True``, features are scaled to mean zero and variance one.
 
-    theta: float, default: 1.
+    theta : float, default: 1.
         Range parameter of the kernel functions which determines how fast the kernel function
         decays with distance.
 
-    n_neighbors: int, default: None
+    n_neighbors : int, default: None
         If the range parameter 'theta' is not given, it can be determined from the data using this
         parameter. The parameter 'theta' is chosen as the average distance of the 'n_neighbors' 
         nearest neighbors distances. The parameter 'range_adjust' can be used to modify this. 
@@ -2676,21 +2658,21 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
         decayed to essentially zero (0.05 or 0.01, respectively) at the average distance of the 
         'n_neighbors' nearest neighbors (for rbf and laplace kernel).
 
-    prctg_neighbors: float, default: None
+    prctg_neighbors : float, default: None
         Alternative way of specifying the number of nearest neighbors 'n_neighbors'.
         If n_neighbors=None, it is set to prctg_neighbors*n_samples where n_samples denotes the 
         number of training samples.
 
-    range_adjust: float, default: 1.
+    range_adjust : float, default: 1.
         See documentation on 'n_neighbors'.
 
-    alphaReg: float, default: 1.
+    alphaReg : float, default: 1.
         Regularization parameter for kernel Ridge regression boosting updates.
 
-    sparse: bool, default: False
+    sparse : bool, default: False
         When set to ``True``, sparse matrices are used (only meaningfull for kernel="GW").
         
-    nystroem: boolean, default=None
+    nystroem : boolean, default=None
         Indicates whether Nystroem sampling is used or not for kernel boosting.
 
     n_components : int, detault = 100
@@ -2751,10 +2733,10 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
                        'gamma', 'msr')
 
     def __init__(self, loss='ls', learning_rate=0.1, n_estimators=100,
-                 subsample=1.0, criterion='friedman_mse', min_samples_split=2,
+                 subsample=1.0, criterion='mse', min_samples_split=2,
                  min_samples_leaf=1, min_weight_fraction_leaf=0.,
-                 min_weight_leaf=1., max_depth=3, min_impurity_decrease=0.,
-                 min_impurity_split=None, init=None, random_state=None,
+                 min_weight_leaf=1., max_depth=5, min_impurity_decrease=0.,
+                 init=None, random_state=None,
                  max_features=None, alpha=0.9, verbose=0, max_leaf_nodes=None,
                  warm_start=False, presort='auto', validation_fraction=0.1,
                  n_iter_no_change=None, tol=1e-4, sigma=1., yl=0., yu=1., gamma=1,
@@ -2768,7 +2750,7 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
             min_samples_leaf=min_samples_leaf, min_weight_fraction_leaf=min_weight_fraction_leaf,
             min_weight_leaf=min_weight_leaf, max_depth=max_depth, init=init, subsample=subsample,
             max_features=max_features, min_impurity_decrease=min_impurity_decrease,
-            min_impurity_split=min_impurity_split, random_state=random_state, alpha=alpha, 
+            random_state=random_state, alpha=alpha, 
             verbose=verbose, max_leaf_nodes=max_leaf_nodes, warm_start=warm_start,
             presort=presort, validation_fraction=validation_fraction,
             n_iter_no_change=n_iter_no_change, tol=tol, sigma=sigma,

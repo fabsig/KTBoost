@@ -138,7 +138,7 @@ $(document).ready(function () {
 <p>Concerning the <strong>optimization</strong> step for finding the boosting updates, the package supports:</p>
 <ul>
 <li>Gradient descent</li>
-<li>Newton method (if applicable)</li>
+<li>Newton’s method (if applicable)</li>
 <li>A hybrid version of the two for trees as base learners</li>
 </ul>
 <p>The package implements the following <strong>loss functions</strong>:</p>
@@ -156,11 +156,23 @@ $(document).ready(function () {
 <p>and then loaded using</p>
 <pre class="python"><code>import KTBoost.KTBoost as KTBoost</code></pre>
 </div>
+<div id="author" class="section level2">
+<h2>Author</h2>
+<p>Fabio Sigrist</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<ul>
+<li>Friedman, J. H. (2001). Greedy function approximation: a gradient boosting machine. The annals of statistics, 1189-1232.</li>
+<li><a href="https://arxiv.org/abs/1711.08695">Sigrist, F., &amp; Hirnschall, C. (2017).</a> Grabit: Gradient Tree Boosted Tobit Models for Default Prediction. arXiv preprint arXiv:1711.08695.</li>
+<li><a href="https://arxiv.org/abs/1808.03064">Sigrist, F. (2018)</a>. Gradient and Newton Boosting for Classification and Regression. arXiv preprint arXiv:1808.03064.</li>
+<li><a href="https://arxiv.org/abs/1902.03999">Sigrist, F. (2019).</a> KTBoost: Combined Kernel and Tree Boosting. arXiv preprint arXiv:1902.03999.</li>
+</ul>
+</div>
 <div id="usage-and-examples" class="section level2">
 <h2>Usage and examples</h2>
 <p>The package is build as an extension of the scikit-learn implementation of boosting algorithms and its workflow is very similar to that of scikit-learn.</p>
-<p>The two main classes are <code>KTBoost.BoostingClassifier</code> and <code>KTBoost.BoostingRegressor</code>.</p>
-<p>The following <strong>code examples</strong> show how the package can be used.</p>
+<p>The two main classes are <code>KTBoost.BoostingClassifier</code> and <code>KTBoost.BoostingRegressor</code>. The following <strong>code examples</strong> show how the package can be used. See also below for more information on the main parameters.</p>
 <div id="define-models-train-models-make-predictions" class="section level4">
 <h4>Define models, train models, make predictions</h4>
 <pre class="python"><code>import KTBoost.KTBoost as KTBoost
@@ -240,19 +252,56 @@ from KTBoost.partial_dependence import partial_dependence
 kwargs = dict(X=Xtrain, percentiles=(0, 1))
 partial_dependence(model,[0],**kwargs)</code></pre>
 </div>
-</div>
-<div id="author" class="section level2">
-<h2>Author</h2>
-<p>Fabio Sigrist</p>
-</div>
-<div id="references" class="section level2">
-<h2>References</h2>
+<div id="summary-of-main-parameters" class="section level4">
+<h4>Summary of main parameters</h4>
+<p>In the following, we describe the most important parameters of the constructors of the two classes <code>KTBoost.BoostingClassifier</code> and <code>KTBoost.BoostingRegressor</code>.</p>
 <ul>
-<li>Friedman, J. H. (2001). Greedy function approximation: a gradient boosting machine. The annals of statistics, 1189-1232.</li>
-<li>Sigrist, F., &amp; Hirnschall, C. (2017). Grabit: Gradient Tree Boosted Tobit Models for Default Prediction. arXiv preprint arXiv:1711.08695.</li>
-<li>Sigrist, F. (2018). Gradient and Newton Boosting for Classification and Regression. arXiv preprint arXiv:1808.03064.</li>
-<li>Sigrist, F. (2019). KTBoost: Combined Kernel and Tree Boosting. arXiv preprint arXiv:1902.03999.</li>
+<li><strong>loss</strong> : loss function to be optimized.
+<ul>
+<li><p><code>KTBoost.BoostingClassifier</code> {‘deviance’, ‘exponential’}, optional (default=‘deviance’)</p>
+<p>‘deviance’ refers to the logistic regression loss for binary classification, and the cross-entropy loss with the softmax function for multiclass classification.</p></li>
+<li><p><code>KTBoost.BoostingRegressor</code> {‘ls’, ‘lad’, ‘huber’, ‘quantile’, ‘poisson’, ‘gamma’, ‘tobit’, ‘msr’}, optional (default=‘ls’)</p>
+<p>‘ls’ refers to the squarred loss. ‘lad’ (least absolute deviation) is a robust version. ‘huber’ is a combination of the former two. ‘quantile’ allows quantile regression (use ‘alpha’ to specify the quantile). ‘tobit’ corresponds to the <a href="https://arxiv.org/abs/1711.08695">Grabit model</a> with a Tobit loss. ‘msr’ is a linear regression model where both the mean and the logarithm of the standard deviation are varying.</p></li>
+</ul></li>
+<li><p><strong>update_step</strong> : string, default=“hybrid”</p>
+<p>Defines how boosting updates are calculated. Use either “gradient” for gradient boosting or “newton” for Newton boosting (if applicable). “hybrid” uses a gradient step for finding the structur of trees and a Newton step for finding the leaf values. For kernel boosting, “hybrid” uses gradient descent. See the <a href="https://arxiv.org/abs/1808.03064">reference paper</a> for more information.</p></li>
+<li><p><strong>base_learner</strong> : string, default=“tree”</p>
+<p>Base learners used in boosting updates. Choose among “tree” for trees, “kernel” for reproducing kernel Hilbert space (RKHS) regression functions, and “combined” for a combination of the two. See the <a href="https://arxiv.org/abs/1902.03999">reference paper</a> for more information.</p></li>
+<li><p><strong>learning_rate</strong> : float, optional (default=0.1)</p>
+<p>The learning rate shrinks the contribution of each base learner by ‘learning_rate’. There is a trade-off between learning_rate and n_estimators.</p></li>
+<li><p><strong>n_estimators</strong> : int (default=100)</p>
+<p>The number of boosting iterations to perform.</p></li>
+<li><p><strong>max_depth</strong> : integer, optional (default=5)</p>
+<p>Maximum depth of the regression trees. The maximum depth limits the number of nodes in the tree. Tune this parameter for best performance. This value determines the interaction of the predictor variables.</p></li>
+<li><p><strong>min_samples_leaf</strong> : int, float, optional (default=1)</p>
+<p>The minimum number of samples required to be at a leaf node:</p>
+<ul>
+<li>If int, then consider <code>min_samples_leaf</code> as the minimum number.</li>
+<li>If float, then <code>min_samples_leaf</code> is a percentage and <code>ceil(min_samples_leaf * n_samples)</code> are the minimum number of samples for each node.</li>
+</ul></li>
+<li><p><strong>min_weight_leaf</strong> : float, optional (default=1.)</p>
+<p>The minimum number of weighted samples required to be at a leaf node. If Newton boosting is used, this corresponds to the equivalent (i.e., normalized) number of weighted samples where the weights are determined based on the second derivatives / Hessians.</p></li>
+<li><p><strong>criterion</strong> : string, optional (default=“mse”)</p>
+<pre><code>The function to measure the quality of a split. Supported criteria
+are &quot;friedman_mse&quot; for the mean squared error with improvement
+score by Friedman, &quot;mse&quot; for mean squared error, and &quot;mae&quot; for
+the mean absolute error.</code></pre></li>
+<li><p><strong>random_state</strong> : int, RandomState instance or None, optional (default=None)</p>
+<p>If int, random_state is the seed used by the random number generator; If RandomState instance, random_state is the random number generator; If None, the random number generator is the RandomState instance used by <code>np.random</code>.</p></li>
+<li><p><strong>kernel</strong> : string, default=“rbf”</p>
+<p>Kernel function used for kernel boosting. Currently, supports “laplace”, “rbf”, and “GW” (generalied Wendland with “smoothness parameter” mu=1).</p></li>
+<li><p><strong>theta</strong> : float, default: 1.</p>
+<p>Range parameter of the kernel functions which determines how fast the kernel function decays with distance.</p></li>
+<li><p><strong>n_neighbors</strong> : int, default: None</p>
+<p>If the range parameter ‘theta’ is not given, it can be determined from the data using this parameter. The parameter ‘theta’ is chosen as the average distance of the ‘n_neighbors’ nearest neighbors distances. The parameter ‘range_adjust’ can be used to modify this. If range_adjust=3 or range_adjust=4.6, ‘theta’ is chosen such that the kernel function has decayed to essentially zero (0.05 or 0.01, respectively) at the average distance of the ‘n_neighbors’ nearest neighbors (for rbf and laplace kernel).</p></li>
+<li><p><strong>alphaReg</strong> : float, default: 1.</p>
+<p>Regularization parameter for kernel Ridge regression boosting updates.</p></li>
+<li><p><strong>nystroem</strong> : boolean, default=None</p>
+<p>Indicates whether Nystroem sampling is used or not for kernel boosting.</p></li>
+<li><p><strong>n_components</strong> : int, detault = 100</p>
+<p>Number of data points used in Nystroem sampling for kernel boosting.</p></li>
 </ul>
+</div>
 </div>
 </div>
 
