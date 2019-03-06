@@ -1542,7 +1542,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                              "was %r" % self.gamma)
             
         if ((self.theta is None) & (self.n_neighbors is None) & 
-            (self.prctg_neighbors is None) & self.base_learner in ["kernel","combined"]):
+            (self.prctg_neighbors is None) & (self.base_learner in ["kernel","combined"])):
             raise ValueError("At least one from the three parameters theta, "
                              "n_neighbors or prctg_neighbors must be specified")
 
