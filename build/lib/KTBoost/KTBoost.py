@@ -1542,7 +1542,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                              "was %r" % self.gamma)
             
         if ((self.theta is None) & (self.n_neighbors is None) & 
-            (self.prctg_neighbors is None)):
+            (self.prctg_neighbors is None) & self.base_learner in ["kernel","combined"]):
             raise ValueError("At least one from the three parameters theta, "
                              "n_neighbors or prctg_neighbors must be specified")
 
@@ -1683,11 +1683,10 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         if (self.loss == "msr") & (self.min_samples_leaf==1) & (self.update_step in ["gradient", "hybrid"]):
             warnings.warn("Warning: Minimum number of samples per leaf should be larger than 1 " 
                           "for mean-scale regression.")
-#        if (self.loss == "msr") & (self.min_weight_leaf==1.)  & (self.update_step=="newton"):
-#            warnings.warn("Warning: Minimum number of weighted samples per leaf should be larger " 
-#                          "than 1 for mean-scale regression.")
-        if (len(y)<self.n_neighbors) & (not self.n_neighbors == np.inf):
-            raise ValueError("Number of neighbors is larger than number of samples.")
+        
+        if self.base_learner in ["kernel","combined"]:
+            if (len(y)<self.n_neighbors) & (not self.n_neighbors == np.inf):
+                raise ValueError("Number of neighbors is larger than number of samples.")
 
         if not self._is_initialized():
             if self.scaleX:
