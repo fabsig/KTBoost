@@ -133,7 +133,7 @@ $(document).ready(function () {
 <ul>
 <li>Trees</li>
 <li>Reproducing kernel Hilbert space (RKHS) ridge regression functions (i.e., posterior means of Gaussian processes)</li>
-<li>A combination of the two (i.e., the KTBoost algorithm)</li>
+<li>A combination of the two (the KTBoost algorithm)</li>
 </ul>
 <p>Concerning the <strong>optimization</strong> step for finding the boosting updates, the package supports:</p>
 <ul>
@@ -146,7 +146,7 @@ $(document).ready(function () {
 <li>Continuous data (“regression”): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian log-likelihood with both the mean and the standard deviation as functions of features</li>
 <li>Count data (“regression”): Poisson regression loss</li>
 <li>(Unorderd) Categorical data (“classification”): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax</li>
-<li>Mixed continuous-categorical data (“censored regression”): negative Tobit likelihood (i.e., the Grabit model)</li>
+<li>Mixed continuous-categorical data (“censored regression”): negative Tobit likelihood (the Grabit model)</li>
 </ul>
 </div>
 <div id="installation" class="section level2">
@@ -154,7 +154,7 @@ $(document).ready(function () {
 <p>It can be <strong>installed</strong> using</p>
 <pre><code>pip install -U KTBoost</code></pre>
 <p>and then loaded using</p>
-<pre class="python"><code>import KTBoost.KTBoost as KTBoost</code></pre>
+<pre class="python"><code>import KTBoost as KTBoost</code></pre>
 </div>
 <div id="author" class="section level2">
 <h2>Author</h2>
@@ -175,7 +175,7 @@ $(document).ready(function () {
 <p>The two main classes are <code>KTBoost.BoostingClassifier</code> and <code>KTBoost.BoostingRegressor</code>. The following <strong>code examples</strong> show how the package can be used. See also below for more information on the main parameters.</p>
 <div id="define-models-train-models-make-predictions" class="section level4">
 <h4>Define models, train models, make predictions</h4>
-<pre class="python"><code>import KTBoost.KTBoost as KTBoost
+<pre class="python"><code>import KTBoost as KTBoost
 
 ################################################
 ## Define model (see below for more examples) ##

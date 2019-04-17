@@ -51,8 +51,12 @@ from scipy.special import expit
 
 from time import time
 from sklearn.model_selection import train_test_split
-import kernel_ridge as kr_sp
-from tree import DecisionTreeRegressor
+try:
+    from kernel_ridge import KernelRidge
+    from tree import DecisionTreeRegressor
+except:
+    from .kernel_ridge import KernelRidge
+    from .tree import DecisionTreeRegressor
 from scipy import sparse as sparse
 from scipy.sparse import linalg as sp_linalg
 from scipy import linalg
@@ -1151,6 +1155,12 @@ LOSS_FUNCTIONS = {'ls': LeastSquaresError,
 INIT_ESTIMATORS = {'zero': ZeroEstimator}
 
 
+BOOSTING_UPDATE = {'gradient', 'hybrid', 'newton'}
+
+
+BASE_LEARNER = {'tree', 'kernel', 'combined'}
+
+
 class VerboseReporter(object):
     """Reports verbose output to stdout.
 
@@ -1313,6 +1323,9 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         KernRegrs=[]
         for k in range(loss.K):
             weights = sample_weight.copy()##need to take a copy for the multiclass case with K>1 (otherwise the sample_weights get modified for increasing k...)
+            if self.subsample < 1.0:
+                # no inplace multiplication!
+                weights = weights * sample_mask.astype(np.float64)
             if loss.is_multi_class:
                 y = np.array(original_y == k, dtype=np.float64)
 
@@ -1321,18 +1334,11 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
             
             if self.update_step=="newton":
                 hessian = loss.hessian(y=y, pred=y_pred, residual=residual, 
-                                       k=k, sample_weight=weights)
+                                       k=k, sample_weight=sample_weight)
                 hessian[hessian < MIN_VAL_HESSIAN] = MIN_VAL_HESSIAN
                 weights = weights * hessian
                 residual = residual / hessian
                 weights = (weights / np.sum(weights) * len(weights))
-
-            if self.subsample < 1.0:
-                # no inplace multiplication!
-                weights = weights * sample_mask.astype(np.float64)
-            
-#            if self.update_step=="newton":
-#                self.min_weight_fraction_leaf = self.min_weight_leaf / np.sum(weights)
 
             """
             Calculate estimators
@@ -1373,7 +1379,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                                                  update_step=self.update_step)
             if not self.base_learner == "tree": # XXX ToDo: handling of (i) X_csc and (ii) X_idx_sorted.
                 if self.kernel_mat is None:##Initialize kernel matrix once (ToDo: move this out of this function to proper initialization)
-                    modi = kr_sp.KernelRidge(alpha=self.alphaReg,theta=self.theta,kernel=self.kernel,
+                    modi = KernelRidge(alpha=self.alphaReg,theta=self.theta,kernel=self.kernel,
                                              n_neighbors=self.n_neighbors,prctg_neighbors=self.prctg_neighbors,
                                              range_adjust=self.range_adjust,sparse=self.sparse,nystroem=self.nystroem,
                                              n_components=self.n_components)
@@ -1396,7 +1402,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                         else:
                             K.flat[::K.shape[0] + 1] += self.alphaReg
                             self.solve_kernel=linalg.inv(K)
-                modi = kr_sp.KernelRidge(alpha=self.alphaReg,theta=self.theta,kernel_mat=self.kernel_mat,
+                modi = KernelRidge(alpha=self.alphaReg,theta=self.theta,kernel_mat=self.kernel_mat,
                                          solve_kernel=self.solve_kernel,kernel=self.kernel,n_neighbors=self.n_neighbors,
                                          prctg_neighbors=self.prctg_neighbors,range_adjust=self.range_adjust,sparse=self.sparse,
                                          nystroem=self.nystroem,n_components=self.n_components,component_indices=self.component_indices)
@@ -1449,6 +1455,12 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         if (self.loss not in self._SUPPORTED_LOSS
                 or self.loss not in LOSS_FUNCTIONS):
             raise ValueError("Loss '{0:s}' not supported. ".format(self.loss))
+
+        if self.update_step not in BOOSTING_UPDATE:
+            raise ValueError("Boosting update step '{0:s}' not supported. ".format(self.update_step))
+
+        if self.base_learner not in BASE_LEARNER:
+            raise ValueError("Base learner '{0:s}' not supported. ".format(self.base_learner))
 
         if ((self.loss in ('huber', 'quantile', 'lad', 'ls')) 
                 and (self.update_step == "newton")):
@@ -1683,8 +1695,13 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         if (self.loss == "msr") & (self.min_samples_leaf==1) & (self.update_step in ["gradient", "hybrid"]):
             warnings.warn("Warning: Minimum number of samples per leaf should be larger than 1 " 
                           "for mean-scale regression.")
-        
-        if self.base_learner in ["kernel","combined"]:
+
+#        if (self.base_learner=="combined") & (self.subsample==1.0):
+#            warnings.warn("Warning: It is recommended that subsampling (subsample<1.0)"
+#                          "is used for the KTBoost algorithm.")
+
+        if ((self.base_learner in ["kernel","combined"]) & 
+            (not self.n_neighbors is None)):
             if (len(y)<self.n_neighbors) & (not self.n_neighbors == np.inf):
                 raise ValueError("Number of neighbors is larger than number of samples.")
 

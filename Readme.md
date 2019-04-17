@@ -8,7 +8,7 @@ Concerning **base learners**, KTboost includes:
 
 * Trees 
 * Reproducing kernel Hilbert space (RKHS) ridge regression functions (i.e., posterior means of Gaussian processes)
-* A combination of the two (i.e., the KTBoost algorithm) 
+* A combination of the two (the KTBoost algorithm) 
 
 
 Concerning the **optimization** step for finding the boosting updates, the package supports:
@@ -23,7 +23,7 @@ The package implements the following **loss functions**:
  * Continuous data ("regression"): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian log-likelihood with both the mean and the standard deviation as functions of features
 * Count data ("regression"): Poisson regression loss
 * (Unorderd) Categorical data ("classification"): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax
-* Mixed continuous-categorical data ("censored regression"): negative Tobit likelihood (i.e., the Grabit model)
+* Mixed continuous-categorical data ("censored regression"): negative Tobit likelihood (the Grabit model)
 
 
 
@@ -36,7 +36,7 @@ pip install -U KTBoost
 ```
 and then loaded using 
 ```python
-import KTBoost.KTBoost as KTBoost
+import KTBoost as KTBoost
 ```
 
 ## Author
@@ -58,7 +58,7 @@ The two main classes are `KTBoost.BoostingClassifier` and `KTBoost.BoostingRegre
 
 #### Define models, train models, make predictions
 ```python
-import KTBoost.KTBoost as KTBoost
+import KTBoost as KTBoost
 
 ################################################
 ## Define model (see below for more examples) ##

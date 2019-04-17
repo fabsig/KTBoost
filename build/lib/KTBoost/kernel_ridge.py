@@ -5,7 +5,10 @@
 # License: BSD 3 clause
 
 import numpy as np
-from ridge_exten import _solve_cholesky_kernel_sparse
+try:
+    from ridge_exten import _solve_cholesky_kernel_sparse
+except:
+    from .ridge_exten import _solve_cholesky_kernel_sparse
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils import check_array, check_X_y
 from sklearn.utils.validation import check_is_fitted
