@@ -36,7 +36,7 @@ pip install -U KTBoost
 ```
 and then loaded using 
 ```python
-import KTBoost as KTBoost
+import KTBoost.KTBoost as KTBoost
 ```
 
 ## Author
@@ -58,7 +58,7 @@ The two main classes are `KTBoost.BoostingClassifier` and `KTBoost.BoostingRegre
 
 #### Define models, train models, make predictions
 ```python
-import KTBoost as KTBoost
+import KTBoost.KTBoost as KTBoost
 
 ################################################
 ## Define model (see below for more examples) ##

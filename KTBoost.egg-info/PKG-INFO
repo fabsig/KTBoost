@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: KTBoost
-Version: 0.1.7
+Version: 0.1.8
 Summary: Implements several boosting algorithms in Python
 Home-page: https://github.com/fabsig/KTBoost
 Author: Fabio Sigrist
@@ -44,7 +44,7 @@ Description: # KTBoost - A Python Package for Boosting
         ```
         and then loaded using 
         ```python
-        import KTBoost as KTBoost
+        import KTBoost.KTBoost as KTBoost
         ```
         
         ## Author
@@ -66,7 +66,7 @@ Description: # KTBoost - A Python Package for Boosting
         
         #### Define models, train models, make predictions
         ```python
-        import KTBoost as KTBoost
+        import KTBoost.KTBoost as KTBoost
         
         ################################################
         ## Define model (see below for more examples) ##
