@@ -15,7 +15,7 @@ Concerning the **optimization** step for finding the boosting updates, the packa
 
 * Gradient descent
 * Newton's method (if applicable)
-* A hybrid version of the two for trees as base learners
+* A hybrid gradient-Newton version for trees as base learners (if applicable)
 
 
 The package implements the following **loss functions**:
