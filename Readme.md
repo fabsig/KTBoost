@@ -44,8 +44,8 @@ Fabio Sigrist
 
 ## References
 
-* Friedman, J. H. (2001). Greedy function approximation: a gradient boosting machine. The annals of statistics, 1189-1232.
-* [Sigrist, F., & Hirnschall, C. (2017).](https://arxiv.org/abs/1711.08695) Grabit: Gradient Tree Boosted Tobit Models for Default Prediction. arXiv preprint arXiv:1711.08695.
+* Friedman, J. H. (2001). Greedy function approximation: a gradient boosting machine. The Annals of Statistics, 1189-1232.
+* [Sigrist, F., & Hirnschall, C. (2019).](https://arxiv.org/abs/1711.08695) Grabit: Gradient Tree Boosted Tobit Models for Default Prediction. Journal of Banking & Finance
 * [Sigrist, F. (2018)](https://arxiv.org/abs/1808.03064). Gradient and Newton Boosting for Classification and Regression. arXiv preprint arXiv:1808.03064.
 * [Sigrist, F. (2019).](https://arxiv.org/abs/1902.03999) KTBoost: Combined Kernel and Tree Boosting. arXiv preprint arXiv:1902.03999.
 
