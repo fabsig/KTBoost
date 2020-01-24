@@ -31,7 +31,7 @@ from abc import abstractmethod
 from sklearn.ensemble.base import BaseEnsemble
 from sklearn.base import ClassifierMixin
 from sklearn.base import RegressorMixin
-from sklearn.externals import six
+import six as six
 
 from sklearn.ensemble._gradient_boosting import predict_stages
 from sklearn.ensemble._gradient_boosting import predict_stage
@@ -735,7 +735,7 @@ class TobitLossFunction(RegressionLossFunction):
                     / sample_weight.sum())
         return loss
 
-    def negative_gradient(self, y, pred, sample_weight, **kargs):
+    def negative_gradient(self, y, pred, **kargs):
         pred = pred.ravel()
         sigma = self.sigma
         yl = self.yl
@@ -745,12 +745,10 @@ class TobitLossFunction(RegressionLossFunction):
         indu = (y == yu)
         indmid = (y > yl) & (y < yu)
         residual = np.zeros((y.shape[0],), dtype=np.float64)
-        residual[indl] = (- sample_weight[indl]
-                          * np.exp(norm.logpdf(diff[indl])
+        residual[indl] = (- np.exp(norm.logpdf(diff[indl])
                           - norm.logcdf(diff[indl])) / sigma)
-        residual[indmid] = sample_weight[indmid] * diff[indmid] / sigma
-        residual[indu] = (sample_weight[indu]
-                          * np.exp(norm.logpdf(diff[indu])
+        residual[indmid] = diff[indmid] / sigma
+        residual[indu] = (np.exp(norm.logpdf(diff[indu])
                           - norm.logcdf(-diff[indu])) / sigma)
         return (residual)
 
@@ -838,7 +836,7 @@ class PoissonLossFunction(RegressionLossFunction):
                             * sample_weight)
         return loss
 
-    def negative_gradient(self, y, pred, sample_weight, **kargs):
+    def negative_gradient(self, y, pred, **kargs):
         return y - np.exp(pred.ravel())
 
     def hessian(self, y, pred, residual, **kargs):
@@ -894,7 +892,7 @@ class GammaLossFunction(RegressionLossFunction):
                             * sample_weight)
         return loss
 
-    def negative_gradient(self, y, pred, sample_weight, **kargs):
+    def negative_gradient(self, y, pred, **kargs):
         return -self.gamma * (1 - np.exp(-pred.ravel()) * y)
 
     def hessian(self, y, pred, residual, **kargs):

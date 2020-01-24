@@ -11,8 +11,8 @@ from scipy.stats.mstats import mquantiles
 
 from sklearn.utils.extmath import cartesian
 from sklearn.utils._joblib import Parallel, delayed
-from sklearn.externals import six
-from sklearn.externals.six.moves import map, range, zip
+import six as six
+from six.moves import map, range, zip
 from sklearn.utils import check_array
 from sklearn.utils.validation import check_is_fitted
 from sklearn.tree._tree import DTYPE

@@ -30,7 +30,7 @@ from sklearn.utils import compute_sample_weight
 from sklearn.utils import column_or_1d
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import GridSearchCV
-from sklearn.externals import six
+import six as six
 from sklearn.metrics.scorer import check_scoring
 
 def _solve_sparse_cg(X, y, alpha, max_iter=None, tol=1e-3, verbose=0):
