@@ -699,8 +699,8 @@ class TobitLossFunction(RegressionLossFunction):
 
     References
     ----------
-    Sigrist, F., & Hirnschall, C. (2017). Grabit: Gradient Tree Boosted Tobit
-    Models for Default Prediction. arXiv preprint arXiv:1711.08695
+    Sigrist, F., & Hirnschall, C. (2019). Grabit: Gradient Tree Boosted Tobit
+    Models for Default Prediction. Journal of Banking and Finance
     """
 
     def __init__(self, n_classes, sigma=1, yl=0, yu=1):
