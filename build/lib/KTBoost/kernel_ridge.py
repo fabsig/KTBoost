@@ -12,7 +12,7 @@ except:
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils import check_array, check_X_y
 from sklearn.utils.validation import check_is_fitted
-from sklearn.linear_model.ridge import _solve_cholesky_kernel
+from sklearn.linear_model._ridge import _solve_cholesky_kernel
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.metrics.pairwise import check_pairwise_arrays
 import bottleneck as bn

@@ -344,8 +344,7 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
                                                 self.max_features_,
                                                 min_samples_leaf,
                                                 self.min_weight_leaf,
-                                                random_state,
-                                                self.presort)
+                                                random_state)#self.presort
 
         self.tree_ = Tree(self.n_features_, self.n_classes_, self.n_outputs_)
 

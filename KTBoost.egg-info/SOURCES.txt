@@ -9,4 +9,5 @@ KTBoost/tree.py
 KTBoost.egg-info/PKG-INFO
 KTBoost.egg-info/SOURCES.txt
 KTBoost.egg-info/dependency_links.txt
+KTBoost.egg-info/requires.txt
 KTBoost.egg-info/top_level.txt

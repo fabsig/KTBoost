@@ -18,8 +18,9 @@ from scipy import linalg
 from scipy import sparse
 from scipy.sparse import linalg as sp_linalg
 
-from sklearn.linear_model.base import LinearClassifierMixin, LinearModel, _rescale_data
-from sklearn.linear_model.sag import sag_solver
+
+from sklearn.linear_model._base import LinearClassifierMixin, LinearModel, _rescale_data
+from sklearn.linear_model._sag import sag_solver
 from sklearn.base import RegressorMixin
 from sklearn.utils.extmath import safe_sparse_dot
 from sklearn.utils.extmath import row_norms
@@ -31,7 +32,7 @@ from sklearn.utils import column_or_1d
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import GridSearchCV
 import six as six
-from sklearn.metrics.scorer import check_scoring
+from sklearn.metrics import check_scoring
 
 def _solve_sparse_cg(X, y, alpha, max_iter=None, tol=1e-3, verbose=0):
     n_samples, n_features = X.shape

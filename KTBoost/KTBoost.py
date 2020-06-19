@@ -28,7 +28,7 @@ from __future__ import division
 from abc import ABCMeta
 from abc import abstractmethod
 
-from sklearn.ensemble.base import BaseEnsemble
+from sklearn.ensemble import BaseEnsemble
 from sklearn.base import ClassifierMixin
 from sklearn.base import RegressorMixin
 import six as six
@@ -72,11 +72,12 @@ from sklearn.utils import check_X_y
 from sklearn.utils import column_or_1d
 from sklearn.utils import check_consistent_length
 from sklearn.utils import deprecated
-from sklearn.utils.fixes import logsumexp
 from sklearn.utils.stats import _weighted_percentile
 from sklearn.utils.validation import check_is_fitted
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.exceptions import NotFittedError
+
+from scipy.special import logsumexp
 
 import warnings
 
