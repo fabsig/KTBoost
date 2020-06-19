@@ -55,6 +55,8 @@ The package is build as an extension of the scikit-learn implementation of boost
 
 The two main classes are `KTBoost.BoostingClassifier` and `KTBoost.BoostingRegressor`. The following **code examples** show how the package can be used. See also below for more information on the main parameters.
 
+See also the [**Grabit demo**](https://github.com/fabsig/KTBoost/blob/master/examples/Grabit_demo.py) for working **examples of the Grabit model**.
+
 
 #### Define models, train models, make predictions
 ```python
