@@ -102,6 +102,7 @@ yu=np.percentile(y,q=66.66)
 yc[y>=yu]=yu
 yc[y<=yl]=yl
 
+# train Grabit model and make predictions
 model = KTBoost.BoostingRegressor(loss='tobit', yl=yl, yu=yu,sigma=1,
                                   learning_rate=0.1,n_estimators=100,max_depth=3)
 model.fit(X, yc)
