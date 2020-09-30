@@ -51,12 +51,8 @@ from scipy.special import expit
 
 from time import time
 from sklearn.model_selection import train_test_split
-try:
-    from kernel_ridge import KernelRidge
-    from tree import DecisionTreeRegressor
-except:
-    from .kernel_ridge import KernelRidge
-    from .tree import DecisionTreeRegressor
+from .kernel_ridge import KernelRidge
+from .tree import DecisionTreeRegressor
 from scipy import sparse as sparse
 from scipy.sparse import linalg as sp_linalg
 from scipy import linalg
