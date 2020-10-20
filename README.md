@@ -234,7 +234,7 @@ In the following, we describe the most important parameters of the constructors 
 
 * **alphaReg** : float, default: 1.
 
-    Regularization parameter for kernel Ridge regression boosting updates.
+    Regularization parameter for kernel Ridge regression boosting updates. This is added to the diagonal of the kernel matrix. Must be a non-negative number. A non-zero value helps to avoid singular matrices.
 
 * **nystroem** : boolean, default=None
 

@@ -1263,7 +1263,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                  presort='auto', validation_fraction=0.1, 
                  n_iter_no_change=None, tol=1e-4, sigma=1., yl=0., yu=1., gamma=1,
                  update_step="hybrid", base_learner="tree", kernel="rbf", scaleX=False, 
-                 theta=1, n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=0.,
+                 theta=1, n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=1.,
                  sparse=False, nystroem=False, n_components=100):
 
         self.n_estimators = n_estimators
@@ -2185,7 +2185,8 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
         See documentation on 'n_neighbors'.
 
     alphaReg : float, default: 1.
-        Regularization parameter for kernel Ridge regression boosting updates.
+        Regularization parameter for kernel Ridge regression boosting updates. This is added to the diagonal of the
+        kernel matrix. Must be a non-negative number. A non-zero value helps to avoid singular matrices.
 
     sparse : bool, default: False
         When set to ``True``, sparse matrices are used (only meaningfull for kernel="GW").
@@ -2265,7 +2266,7 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
                  presort='auto', validation_fraction=0.1,
                  n_iter_no_change=None, tol=1e-4, update_step="hybrid",
                  base_learner="tree", kernel="rbf", scaleX=False, theta=1, 
-                 n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=0.,
+                 n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=1.,
                  sparse=False, nystroem=False, n_components=100):
 
         super(BoostingClassifier, self).__init__(
@@ -2678,7 +2679,8 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
         See documentation on 'n_neighbors'.
 
     alphaReg : float, default: 1.
-        Regularization parameter for kernel Ridge regression boosting updates.
+        Regularization parameter for kernel Ridge regression boosting updates. This is added to the diagonal of the
+        kernel matrix. Must be a non-negative number. A non-zero value helps to avoid singular matrices.
 
     sparse : bool, default: False
         When set to ``True``, sparse matrices are used (only meaningfull for kernel="GW").
@@ -2752,7 +2754,7 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
                  warm_start=False, presort='auto', validation_fraction=0.1,
                  n_iter_no_change=None, tol=1e-4, sigma=1., yl=0., yu=1., gamma=1,
                  update_step="hybrid", base_learner="tree", kernel="rbf", scaleX=False, 
-                 theta=1, n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=0.,
+                 theta=1, n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=1.,
                  sparse=False, nystroem=False, n_components=100):
 
         super(BoostingRegressor, self).__init__(
