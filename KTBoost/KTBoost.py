@@ -1260,7 +1260,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                  min_weight_leaf, max_depth, min_impurity_decrease, 
                  init, subsample, max_features, random_state, alpha=0.9, 
                  verbose=0, max_leaf_nodes=None, warm_start=False, 
-                 presort='auto', validation_fraction=0.1, 
+                 validation_fraction=0.1, 
                  n_iter_no_change=None, tol=1e-4, sigma=1., yl=0., yu=1., gamma=1,
                  update_step="hybrid", base_learner="tree", kernel="rbf", scaleX=False, 
                  theta=1, n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=1.,
@@ -1284,7 +1284,6 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         self.verbose = verbose
         self.max_leaf_nodes = max_leaf_nodes
         self.warm_start = warm_start
-        self.presort = presort
         self.validation_fraction = validation_fraction
         self.n_iter_no_change = n_iter_no_change
         self.tol = tol
@@ -1306,7 +1305,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         self.n_components = n_components
 
     def _fit_stage(self, i, X, y, y_pred, sample_weight, sample_mask,
-                   random_state, X_idx_sorted, nTreeKernel, X_csc=None, X_csr=None):
+                   random_state, nTreeKernel, X_csc=None, X_csr=None):
         """Fit another stage of ``n_classes_`` trees to the boosting model. """
 
         assert sample_mask.dtype == np.bool
@@ -1351,15 +1350,14 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                     min_impurity_decrease=self.min_impurity_decrease,
                     max_features=self.max_features,
                     max_leaf_nodes=self.max_leaf_nodes,
-                    random_state=random_state,
-                    presort=self.presort)
+                    random_state=random_state)
     
                 if X_csc is not None:
                     tree.fit(X_csc, residual, sample_weight=weights,
-                             check_input=False, X_idx_sorted=X_idx_sorted)
+                             check_input=False)
                 else:
                     tree.fit(X, residual, sample_weight=weights,
-                             check_input=False, X_idx_sorted=X_idx_sorted)
+                             check_input=False)
     
                 # update tree leaves
                 if X_csr is not None:
@@ -1535,11 +1533,6 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
             raise ValueError("n_iter_no_change should either be None or an "
                              "integer. %r was passed"
                              % self.n_iter_no_change)
-
-        allowed_presort = ('auto', True, False)
-        if self.presort not in allowed_presort:
-            raise ValueError("'presort' should be in {}. Got {!r} instead."
-                             .format(allowed_presort, self.presort))
             
         if self.alphaReg < 0:
             raise ValueError("alphaReg must be greater than 0 but "
@@ -1735,26 +1728,11 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
             y_pred = self._decision_function(X)
             self._resize_state()
 
-        if self.presort is True and issparse(X):
-            raise ValueError(
-                "Presorting is not supported for sparse matrices.")
-
-        presort = self.presort
-        # Allow presort to be 'auto', which means True if the dataset is dense,
-        # otherwise it will be False.
-        if presort == 'auto':
-            presort = not issparse(X)
-
-        X_idx_sorted = None
-        if presort:
-            X_idx_sorted = np.asfortranarray(np.argsort(X, axis=0),
-                                             dtype=np.int32)
-
         # fit the boosting stages
         # XXX ToDo: should n_stages be deleted? (redundant due to self.number_estimators)
         n_stages = self._fit_stages(X, y, y_pred, sample_weight, self._rng,
                                     X_val, y_val, sample_weight_val,
-                                    begin_at_stage, monitor, X_idx_sorted)
+                                    begin_at_stage, monitor)
         n_trees = self.number_estimators[self.n_estimators-1][0]
         n_kernel = self.number_estimators[self.n_estimators-1][1]
         if not self.base_learner in ["tree","kernel"]:
@@ -1775,7 +1753,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
 
     def _fit_stages(self, X, y, y_pred, sample_weight, random_state,
                     X_val, y_val, sample_weight_val,
-                    begin_at_stage=0, monitor=None, X_idx_sorted=None):
+                    begin_at_stage=0, monitor=None):
         """Iteratively fits the stages.
 
         For each stage it computes the progress (OOB, train score)
@@ -1818,7 +1796,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
 
             # fit next stage of trees
             y_pred = self._fit_stage(i, X, y, y_pred, sample_weight,
-                                     sample_mask, random_state, X_idx_sorted,
+                                     sample_mask, random_state,
                                      nTreeKernel, X_csc, X_csr)
             self.number_estimators[i]=nTreeKernel
 
@@ -2132,12 +2110,6 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
         If None, the random number generator is the RandomState instance used
         by `np.random`.
 
-    presort : bool or 'auto', optional (default='auto')
-        Whether to presort the data to speed up the finding of best splits in
-        fitting. Auto mode by default will use presorting on dense data and
-        default to normal sorting on sparse data. Setting presort to true on
-        sparse data will raise an error.
-
     validation_fraction : float, optional, default 0.1
         The proportion of training data to set aside as validation set for
         early stopping. Must be between 0 and 1.
@@ -2263,7 +2235,7 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
                  min_weight_leaf=1., max_depth=5, min_impurity_decrease=0.,
                  init=None, random_state=None, max_features=None, verbose=0,
                  max_leaf_nodes=None, warm_start=False,
-                 presort='auto', validation_fraction=0.1,
+                 validation_fraction=0.1,
                  n_iter_no_change=None, tol=1e-4, update_step="hybrid",
                  base_learner="tree", kernel="rbf", scaleX=False, theta=1, 
                  n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=1.,
@@ -2276,7 +2248,7 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
             max_depth=max_depth, init=init, subsample=subsample, max_features=max_features,
             random_state=random_state, verbose=verbose, max_leaf_nodes=max_leaf_nodes,
             min_impurity_decrease=min_impurity_decrease, warm_start=warm_start,
-            presort=presort, validation_fraction=validation_fraction,
+            validation_fraction=validation_fraction,
             n_iter_no_change=n_iter_no_change, tol=tol, update_step=update_step, 
             base_learner=base_learner, kernel=kernel, scaleX=scaleX, theta=theta, 
             n_neighbors=n_neighbors, prctg_neighbors=prctg_neighbors, range_adjust=range_adjust,
@@ -2610,12 +2582,6 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
         If None, the random number generator is the RandomState instance used
         by `np.random`.
 
-    presort : bool or 'auto', optional (default='auto')
-        Whether to presort the data to speed up the finding of best splits in
-        fitting. Auto mode by default will use presorting on dense data and
-        default to normal sorting on sparse data. Setting presort to true on
-        sparse data will raise an error.
-
     validation_fraction : float, optional, default 0.1
         The proportion of training data to set aside as validation set for
         early stopping. Must be between 0 and 1.
@@ -2751,7 +2717,7 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
                  min_weight_leaf=1., max_depth=5, min_impurity_decrease=0.,
                  init=None, random_state=None,
                  max_features=None, alpha=0.9, verbose=0, max_leaf_nodes=None,
-                 warm_start=False, presort='auto', validation_fraction=0.1,
+                 warm_start=False, validation_fraction=0.1,
                  n_iter_no_change=None, tol=1e-4, sigma=1., yl=0., yu=1., gamma=1,
                  update_step="hybrid", base_learner="tree", kernel="rbf", scaleX=False, 
                  theta=1, n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=1.,
@@ -2765,7 +2731,7 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
             max_features=max_features, min_impurity_decrease=min_impurity_decrease,
             random_state=random_state, alpha=alpha, 
             verbose=verbose, max_leaf_nodes=max_leaf_nodes, warm_start=warm_start,
-            presort=presort, validation_fraction=validation_fraction,
+            validation_fraction=validation_fraction,
             n_iter_no_change=n_iter_no_change, tol=tol, sigma=sigma,
             yl=yl, yu=yu, gamma=gamma, update_step=update_step, base_learner=base_learner, 
             kernel=kernel, scaleX=scaleX, theta=theta,  n_neighbors=n_neighbors, 

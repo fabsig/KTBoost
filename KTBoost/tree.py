@@ -94,8 +94,7 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
                  random_state,
                  min_impurity_decrease,
                  min_impurity_split,
-                 class_weight=None,
-                 presort=False):
+                 class_weight=None):
         self.criterion = criterion
         self.splitter = splitter
         self.max_depth = max_depth
@@ -109,10 +108,8 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
         self.min_impurity_decrease = min_impurity_decrease
         self.min_impurity_split = min_impurity_split
         self.class_weight = class_weight
-        self.presort = presort
 
-    def fit(self, X, y, sample_weight=None, check_input=True,
-            X_idx_sorted=None):
+    def fit(self, X, y, sample_weight=None, check_input=True):
 
         random_state = check_random_state(self.random_state)
         if check_input:
@@ -296,36 +293,6 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
             raise ValueError("min_impurity_decrease must be greater than "
                              "or equal to 0")
 
-        allowed_presort = ('auto', True, False)
-        if self.presort not in allowed_presort:
-            raise ValueError("'presort' should be in {}. Got {!r} instead."
-                             .format(allowed_presort, self.presort))
-
-        if self.presort is True and issparse(X):
-            raise ValueError("Presorting is not supported for sparse "
-                             "matrices.")
-
-        presort = self.presort
-        # Allow presort to be 'auto', which means True if the dataset is dense,
-        # otherwise it will be False.
-        if self.presort == 'auto':
-            presort = not issparse(X)
-
-        # If multiple trees are built on the same dataset, we only want to
-        # presort once. Splitters now can accept presorted indices if desired,
-        # but do not handle any presorting themselves. Ensemble algorithms
-        # which desire presorting must do presorting themselves and pass that
-        # matrix into each tree.
-        if X_idx_sorted is None and presort:
-            X_idx_sorted = np.asfortranarray(np.argsort(X, axis=0),
-                                             dtype=np.int32)
-
-        if presort and X_idx_sorted.shape != X.shape:
-            raise ValueError("The shape of X (X.shape = {}) doesn't match "
-                             "the shape of X_idx_sorted (X_idx_sorted"
-                             ".shape = {})".format(X.shape,
-                                                   X_idx_sorted.shape))
-
         # Build tree
         criterion = self.criterion
         if not isinstance(criterion, Criterion):
@@ -344,7 +311,7 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
                                                 self.max_features_,
                                                 min_samples_leaf,
                                                 self.min_weight_leaf,
-                                                random_state)#self.presort
+                                                random_state)
 
         self.tree_ = Tree(self.n_features_, self.n_classes_, self.n_outputs_)
 
@@ -365,7 +332,7 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
                                            self.min_impurity_decrease,
                                            min_impurity_split)
 
-        builder.build(self.tree_, X, y, sample_weight, X_idx_sorted)
+        builder.build(self.tree_, X, y, sample_weight)
 
         if self.n_outputs_ == 1:
             self.n_classes_ = self.n_classes_[0]
@@ -641,13 +608,6 @@ class DecisionTreeClassifier(BaseDecisionTree, ClassifierMixin):
         Note that these weights will be multiplied with sample_weight (passed
         through the fit method) if sample_weight is specified.
 
-    presort : bool, optional (default=False)
-        Whether to presort the data to speed up the finding of best splits in
-        fitting. For the default settings of a decision tree on large
-        datasets, setting this to true may slow down the training process.
-        When using either a smaller dataset or a restricted depth, this may
-        speed up the training.
-
     Attributes
     ----------
     classes_ : array of shape = [n_classes] or a list of such arrays
@@ -736,8 +696,7 @@ class DecisionTreeClassifier(BaseDecisionTree, ClassifierMixin):
                  max_leaf_nodes=None,
                  min_impurity_decrease=0.,
                  min_impurity_split=None,
-                 class_weight=None,
-                 presort=False):
+                 class_weight=None):
         super(DecisionTreeClassifier, self).__init__(
             criterion=criterion,
             splitter=splitter,
@@ -751,11 +710,9 @@ class DecisionTreeClassifier(BaseDecisionTree, ClassifierMixin):
             class_weight=class_weight,
             random_state=random_state,
             min_impurity_decrease=min_impurity_decrease,
-            min_impurity_split=min_impurity_split,
-            presort=presort)
+            min_impurity_split=min_impurity_split)
 
-    def fit(self, X, y, sample_weight=None, check_input=True,
-            X_idx_sorted=None):
+    def fit(self, X, y, sample_weight=None, check_input=True):
         """Build a decision tree classifier from the training set (X, y).
 
         Parameters
@@ -779,12 +736,6 @@ class DecisionTreeClassifier(BaseDecisionTree, ClassifierMixin):
             Allow to bypass several input checking.
             Don't use this parameter unless you know what you do.
 
-        X_idx_sorted : array-like, shape = [n_samples, n_features], optional
-            The indexes of the sorted training input samples. If many tree
-            are grown on the same dataset, this allows the ordering to be
-            cached between trees. If None, the data will be sorted here.
-            Don't use this parameter unless you know what to do.
-
         Returns
         -------
         self : object
@@ -794,8 +745,7 @@ class DecisionTreeClassifier(BaseDecisionTree, ClassifierMixin):
         super(DecisionTreeClassifier, self).fit(
             X, y,
             sample_weight=sample_weight,
-            check_input=check_input,
-            X_idx_sorted=X_idx_sorted)
+            check_input=check_input)
         return self
 
     def predict_proba(self, X, check_input=True):
@@ -988,13 +938,6 @@ class DecisionTreeRegressor(BaseDecisionTree, RegressorMixin):
            ``min_impurity_decrease`` in 0.19 and will be removed in 0.21.
            Use ``min_impurity_decrease`` instead.
 
-    presort : bool, optional (default=False)
-        Whether to presort the data to speed up the finding of best splits in
-        fitting. For the default settings of a decision tree on large
-        datasets, setting this to true may slow down the training process.
-        When using either a smaller dataset or a restricted depth, this may
-        speed up the training.
-
     Attributes
     ----------
     feature_importances_ : array of shape = [n_features]
@@ -1074,8 +1017,7 @@ class DecisionTreeRegressor(BaseDecisionTree, RegressorMixin):
                  random_state=None,
                  max_leaf_nodes=None,
                  min_impurity_decrease=0.,
-                 min_impurity_split=None,
-                 presort=False):
+                 min_impurity_split=None):
         super(DecisionTreeRegressor, self).__init__(
             criterion=criterion,
             splitter=splitter,
@@ -1088,11 +1030,9 @@ class DecisionTreeRegressor(BaseDecisionTree, RegressorMixin):
             max_leaf_nodes=max_leaf_nodes,
             random_state=random_state,
             min_impurity_decrease=min_impurity_decrease,
-            min_impurity_split=min_impurity_split,
-            presort=presort)
+            min_impurity_split=min_impurity_split)
 
-    def fit(self, X, y, sample_weight=None, check_input=True,
-            X_idx_sorted=None):
+    def fit(self, X, y, sample_weight=None, check_input=True):
         """Build a decision tree regressor from the training set (X, y).
 
         Parameters
@@ -1115,12 +1055,6 @@ class DecisionTreeRegressor(BaseDecisionTree, RegressorMixin):
             Allow to bypass several input checking.
             Don't use this parameter unless you know what you do.
 
-        X_idx_sorted : array-like, shape = [n_samples, n_features], optional
-            The indexes of the sorted training input samples. If many tree
-            are grown on the same dataset, this allows the ordering to be
-            cached between trees. If None, the data will be sorted here.
-            Don't use this parameter unless you know what to do.
-
         Returns
         -------
         self : object
@@ -1130,8 +1064,7 @@ class DecisionTreeRegressor(BaseDecisionTree, RegressorMixin):
         super(DecisionTreeRegressor, self).fit(
             X, y,
             sample_weight=sample_weight,
-            check_input=check_input,
-            X_idx_sorted=X_idx_sorted)
+            check_input=check_input)
         return self
 
 
