@@ -4,7 +4,7 @@ This Python package implements several boosting algorithms with different combin
 
 ## Description
 
-Concerning **base learners**, KTboost includes:
+Concerning **base learners**, KTBoost includes:
 
 * Trees 
 * Reproducing kernel Hilbert space (RKHS) ridge regression functions (i.e., posterior means of Gaussian processes)
