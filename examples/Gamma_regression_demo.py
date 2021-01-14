@@ -4,7 +4,7 @@ Created on Thu Jan 14 11:54:35 2021
 
 @author: Fabio Sigrist
 
-Small demo of Gamma regression, just to illustrate to code workflow
+Small demo of Gamma regression
 """
 
 import sklearn.datasets as datasets
