@@ -23,7 +23,7 @@ The package implements the following **loss functions**:
  * Continuous data ("regression"): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian log-likelihood with both the mean and the standard deviation as functions of features
 * Count data ("regression"): Poisson regression loss
 * (Unorderd) Categorical data ("classification"): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax
-* Mixed continuous-categorical data ("censored regression"): negative Tobit likelihood (the Grabit model)
+* Mixed continuous-categorical data ("censored regression"): negative Tobit likelihood (the Grabit model), Tweedie loss
 
 
 
@@ -46,16 +46,16 @@ Fabio Sigrist
 
 * Friedman, J. H. (2001). Greedy function approximation: a gradient boosting machine. The Annals of Statistics, 1189-1232.
 * [Sigrist, F., & Hirnschall, C. (2019).](https://arxiv.org/abs/1711.08695) Grabit: Gradient Tree Boosted Tobit Models for Default Prediction. Journal of Banking & Finance
-* [Sigrist, F. (2018)](https://arxiv.org/abs/1808.03064). Gradient and Newton Boosting for Classification and Regression. arXiv preprint arXiv:1808.03064.
+* [Sigrist, F. (2021)](https://arxiv.org/abs/1808.03064). Gradient and Newton Boosting for Classification and Regression. Expert Systems with Applications.
 * [Sigrist, F. (2019).](https://arxiv.org/abs/1902.03999) KTBoost: Combined Kernel and Tree Boosting. arXiv preprint arXiv:1902.03999.
 
 
 ## Usage and examples
 The package is build as an extension of the scikit-learn implementation of boosting algorithms and its workflow is very similar to that of scikit-learn.
 
-The two main classes are `KTBoost.BoostingClassifier` and `KTBoost.BoostingRegressor`. The following **code examples** show how the package can be used. See also below for more information on the main parameters.
+The two main classes are `KTBoost.BoostingClassifier` and `KTBoost.BoostingRegressor`. The following **code examples** show how the package can be used. See also below for more information on the [**main parameters**](#parameters).
 
-See also the [**Grabit demo**](https://github.com/fabsig/KTBoost/blob/master/examples/Grabit_demo.py) for working **examples of the Grabit model**.
+See also the [**Grabit demo**](https://github.com/fabsig/KTBoost/blob/master/examples/Grabit_demo.py) for working **examples of the Grabit model** and the [**gamma regression demo**](https://github.com/fabsig/KTBoost/blob/master/examples/Gamma_regression_demo.py) for an example with the Gamma loss.
 
 
 #### Define models, train models, make predictions
@@ -140,7 +140,8 @@ kwargs = dict(X=Xtrain, percentiles=(0, 1))
 partial_dependence(model,[0],**kwargs)
 ```
 
-#### Summary of main parameters
+## Parameters
+#### Important boosting-related parameters
 In the following, we describe the most important parameters of the constructors of the two classes `KTBoost.BoostingClassifier` and `KTBoost.BoostingRegressor`.
 
 * **loss** : loss function to be optimized.
@@ -150,12 +151,13 @@ In the following, we describe the most important parameters of the constructors 
         'deviance' refers to the logistic regression loss for binary classification, and the cross-entropy        loss with the softmax function for multiclass classification.
     
     * `KTBoost.BoostingRegressor`
-    {'ls', 'lad', 'huber', 'quantile', 'poisson', 'gamma', 'tobit', 'msr'}, optional (default='ls')
+    {'ls', 'lad', 'huber', 'quantile', 'poisson', 'tweedie', 'gamma', 'tobit', 'msr'}, optional (default='ls')
     
-        'ls' refers to the squarred loss. 'lad' (least absolute deviation) is a robust
-        version. 'huber' is a combination of the former two. 'quantile'
-        allows quantile regression (use 'alpha' to specify the quantile).
-        'tobit' corresponds to the [Grabit model](https://arxiv.org/abs/1711.08695) with a Tobit loss.            'msr' is a linear regression model where both the mean and the logarithm of the standard deviation         are varying.
+        'ls' refers to the squarred loss. 'lad' (least absolute deviation) is a robust version.
+        'huber' is a combination of the former two. 
+        'quantile' does quantile regression (use 'alpha' to specify the quantile).
+        'tobit' corresponds to the [Grabit model](https://arxiv.org/abs/1711.08695) with a Tobit loss.
+        'msr' is a linear regression model where both the mean and the logarithm of the standard deviation are varying.
 
 * **update_step** : string, default="hybrid"
 
@@ -243,3 +245,21 @@ In the following, we describe the most important parameters of the constructors 
 * **n_components** : int, detault = 100
 
     Number of data points used in Nystroem sampling for kernel boosting.
+
+#### Important loss function-related parameters
+*    **sigma** : float, default=1
+        Standard deviation of the latent variable in a Tobit model.
+
+*    **yl** : float, default=0
+        Lower limit of the Tobit model. If there is no lower censoring,
+        simply set this parameter to a low value (lower than all data points).
+
+*    **yu** : float, default=1
+        Upper limit of the Tobit model. If there is no upper censoring,
+        simply set this parameter to a high value (higher than all data points).
+
+*    **gamma** : float, default=1
+        Shape parameter for gamma regression.
+
+* **tweedie_variance_power**: float, default = 1.5
+    Tweedie power parameter for tweedie loss.

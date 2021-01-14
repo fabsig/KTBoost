@@ -387,7 +387,7 @@ summary {
 <li>Continuous data (“regression”): quadratic loss (L2 loss), absolute error (L1 loss), Huber loss, quantile regression loss, Gamma regression loss, negative Gaussian log-likelihood with both the mean and the standard deviation as functions of features</li>
 <li>Count data (“regression”): Poisson regression loss</li>
 <li>(Unorderd) Categorical data (“classification”): logistic regression loss (log loss), exponential loss, cross entropy loss with softmax</li>
-<li>Mixed continuous-categorical data (“censored regression”): negative Tobit likelihood (the Grabit model)</li>
+<li>Mixed continuous-categorical data (“censored regression”): negative Tobit likelihood (the Grabit model), Tweedie loss</li>
 </ul>
 </div>
 <div id="installation" class="section level2">
@@ -406,15 +406,15 @@ summary {
 <ul>
 <li>Friedman, J. H. (2001). Greedy function approximation: a gradient boosting machine. The Annals of Statistics, 1189-1232.</li>
 <li><a href="https://arxiv.org/abs/1711.08695">Sigrist, F., &amp; Hirnschall, C. (2019).</a> Grabit: Gradient Tree Boosted Tobit Models for Default Prediction. Journal of Banking &amp; Finance</li>
-<li><a href="https://arxiv.org/abs/1808.03064">Sigrist, F. (2018)</a>. Gradient and Newton Boosting for Classification and Regression. arXiv preprint arXiv:1808.03064.</li>
+<li><a href="https://arxiv.org/abs/1808.03064">Sigrist, F. (2021)</a>. Gradient and Newton Boosting for Classification and Regression. Expert Systems with Applications.</li>
 <li><a href="https://arxiv.org/abs/1902.03999">Sigrist, F. (2019).</a> KTBoost: Combined Kernel and Tree Boosting. arXiv preprint arXiv:1902.03999.</li>
 </ul>
 </div>
 <div id="usage-and-examples" class="section level2">
 <h2>Usage and examples</h2>
 <p>The package is build as an extension of the scikit-learn implementation of boosting algorithms and its workflow is very similar to that of scikit-learn.</p>
-<p>The two main classes are <code>KTBoost.BoostingClassifier</code> and <code>KTBoost.BoostingRegressor</code>. The following <strong>code examples</strong> show how the package can be used. See also below for more information on the main parameters.</p>
-<p>See also the <a href="https://github.com/fabsig/KTBoost/blob/master/examples/Grabit_demo.py"><strong>Grabit demo</strong></a> for working <strong>examples of the Grabit model</strong>.</p>
+<p>The two main classes are <code>KTBoost.BoostingClassifier</code> and <code>KTBoost.BoostingRegressor</code>. The following <strong>code examples</strong> show how the package can be used. See also below for more information on the <a href="#parameters"><strong>main parameters</strong></a>.</p>
+<p>See also the <a href="https://github.com/fabsig/KTBoost/blob/master/examples/Grabit_demo.py"><strong>Grabit demo</strong></a> for working <strong>examples of the Grabit model</strong> and the <a href="https://github.com/fabsig/KTBoost/blob/master/examples/Gamma_regression_demo.py"><strong>gamma regression demo</strong></a> for an example with the Gamma loss.</p>
 <div id="define-models-train-models-make-predictions" class="section level4">
 <h4>Define models, train models, make predictions</h4>
 <pre class="python"><code>import KTBoost.KTBoost as KTBoost
@@ -494,16 +494,19 @@ from KTBoost.partial_dependence import partial_dependence
 kwargs = dict(X=Xtrain, percentiles=(0, 1))
 partial_dependence(model,[0],**kwargs)</code></pre>
 </div>
-<div id="summary-of-main-parameters" class="section level4">
-<h4>Summary of main parameters</h4>
+</div>
+<div id="parameters" class="section level2">
+<h2>Parameters</h2>
+<div id="important-boosting-related-parameters" class="section level4">
+<h4>Important boosting-related parameters</h4>
 <p>In the following, we describe the most important parameters of the constructors of the two classes <code>KTBoost.BoostingClassifier</code> and <code>KTBoost.BoostingRegressor</code>.</p>
 <ul>
 <li><p><strong>loss</strong> : loss function to be optimized.</p>
 <ul>
 <li><p><code>KTBoost.BoostingClassifier</code> {‘deviance’, ‘exponential’}, optional (default=‘deviance’)</p>
 <p>‘deviance’ refers to the logistic regression loss for binary classification, and the cross-entropy loss with the softmax function for multiclass classification.</p></li>
-<li><p><code>KTBoost.BoostingRegressor</code> {‘ls’, ‘lad’, ‘huber’, ‘quantile’, ‘poisson’, ‘gamma’, ‘tobit’, ‘msr’}, optional (default=‘ls’)</p>
-<p>‘ls’ refers to the squarred loss. ‘lad’ (least absolute deviation) is a robust version. ‘huber’ is a combination of the former two. ‘quantile’ allows quantile regression (use ‘alpha’ to specify the quantile). ‘tobit’ corresponds to the <a href="https://arxiv.org/abs/1711.08695">Grabit model</a> with a Tobit loss. ‘msr’ is a linear regression model where both the mean and the logarithm of the standard deviation are varying.</p></li>
+<li><p><code>KTBoost.BoostingRegressor</code> {‘ls’, ‘lad’, ‘huber’, ‘quantile’, ‘poisson’, ‘tweedie’, ‘gamma’, ‘tobit’, ‘msr’}, optional (default=‘ls’)</p>
+<p>‘ls’ refers to the squarred loss. ‘lad’ (least absolute deviation) is a robust version. ‘huber’ is a combination of the former two. ‘quantile’ does quantile regression (use ‘alpha’ to specify the quantile). ‘tobit’ corresponds to the <a href="https://arxiv.org/abs/1711.08695">Grabit model</a> with a Tobit loss. ‘msr’ is a linear regression model where both the mean and the logarithm of the standard deviation are varying.</p></li>
 </ul></li>
 <li><p><strong>update_step</strong> : string, default=“hybrid”</p>
 <p>Defines how boosting updates are calculated. Use either “gradient” for gradient boosting or “newton” for Newton boosting (if applicable). “hybrid” uses a gradient step for finding the structur of trees and a Newton step for finding the leaf values. For kernel boosting, “hybrid” uses gradient descent. See the <a href="https://arxiv.org/abs/1808.03064">reference paper</a> for more information.</p></li>
@@ -539,6 +542,16 @@ partial_dependence(model,[0],**kwargs)</code></pre>
 <p>Indicates whether Nystroem sampling is used or not for kernel boosting.</p></li>
 <li><p><strong>n_components</strong> : int, detault = 100</p>
 <p>Number of data points used in Nystroem sampling for kernel boosting.</p></li>
+</ul>
+</div>
+<div id="important-loss-function-related-parameters" class="section level4">
+<h4>Important loss function-related parameters</h4>
+<ul>
+<li><p><strong>sigma</strong> : float, default=1 Standard deviation of the latent variable in a Tobit model.</p></li>
+<li><p><strong>yl</strong> : float, default=0 Lower limit of the Tobit model. If there is no lower censoring, simply set this parameter to a low value (lower than all data points).</p></li>
+<li><p><strong>yu</strong> : float, default=1 Upper limit of the Tobit model. If there is no upper censoring, simply set this parameter to a high value (higher than all data points).</p></li>
+<li><p><strong>gamma</strong> : float, default=1 Shape parameter for gamma regression.</p></li>
+<li><p><strong>tweedie_variance_power</strong>: float, default = 1.5 Tweedie power parameter for tweedie loss.</p></li>
 </ul>
 </div>
 </div>

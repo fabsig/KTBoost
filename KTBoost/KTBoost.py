@@ -1341,10 +1341,11 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                  init, subsample, max_features, random_state, alpha=0.9, 
                  verbose=0, max_leaf_nodes=None, warm_start=False, 
                  validation_fraction=0.1, 
-                 n_iter_no_change=None, tol=1e-4, sigma=1., yl=0., yu=1., gamma=1,
+                 n_iter_no_change=None, tol=1e-4,
                  update_step="hybrid", base_learner="tree", kernel="rbf", scaleX=False, 
                  theta=1, n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=1.,
-                 sparse=False, nystroem=False, n_components=100, tweedie_variance_power=1.5):
+                 sparse=False, nystroem=False, n_components=100, 
+                 sigma=1., yl=0., yu=1., gamma=1, tweedie_variance_power=1.5):
 
         self.n_estimators = n_estimators
         self.learning_rate = learning_rate
@@ -2301,9 +2302,7 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
 
     n_components : int, detault = 100
         Number of data points used in Nystroem sampling for kernel boosting.
-        
-    tweedie_variance_power: float, default=1.5
-        Parameter for tweedie loss.
+
     Attributes
     ----------
     n_estimators_ : int
@@ -2374,7 +2373,7 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
                  n_iter_no_change=None, tol=1e-4, update_step="hybrid",
                  base_learner="tree", kernel="rbf", scaleX=False, theta=1, 
                  n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=1.,
-                 sparse=False, nystroem=False, n_components=100, tweedie_variance_power=1.5):
+                 sparse=False, nystroem=False, n_components=100):
 
         super(BoostingClassifier, self).__init__(
             loss=loss, learning_rate=learning_rate, n_estimators=n_estimators, criterion=criterion,
@@ -2387,8 +2386,7 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
             n_iter_no_change=n_iter_no_change, tol=tol, update_step=update_step, 
             base_learner=base_learner, kernel=kernel, scaleX=scaleX, theta=theta, 
             n_neighbors=n_neighbors, prctg_neighbors=prctg_neighbors, range_adjust=range_adjust,
-            alphaReg=alphaReg, sparse=sparse, nystroem=nystroem, n_components=n_components,
-            tweedie_variance_power=tweedie_variance_power)
+            alphaReg=alphaReg, sparse=sparse, nystroem=nystroem, n_components=n_components)
 
     def _validate_y(self, y, sample_weight):
         check_classification_targets(y)
@@ -2738,22 +2736,6 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
         by at least tol for ``n_iter_no_change`` iterations (if set to a
         number), the training stops.
 
-    sigma : float, optional, default 1.
-        Standard deviation of the latent variable in a Tobit model.
-        This can be considered a tuning parameter for when doing
-        gardient boosting.
-
-    yl : float, optional, default 0.
-        Lower limit of the Tobit model. If there is no lower censoring,
-        simply set this parameter to a low value (lower than all data points)
-
-    yu : float, optional, default 1.
-        Upper limit of the Tobit model. If there is no upper censoring,
-        simply set this parameter to a high value (higher than all data points)
-
-    gamma : float, default 1.
-        Shape parameter for gamma regression
-
     kernel : string, default="rbf"
         Kernel function used for kernel boosting. Currently, supports "laplace", "rbf", and "GW" 
         (generalied Wendland with "smoothness parameter" mu=1).
@@ -2793,6 +2775,20 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
 
     n_components : int, detault = 100
         Number of data points used in Nystroem sampling for kernel boosting.
+        
+    sigma : float, optional, default=1.
+        Standard deviation of the latent variable in a Tobit model.
+
+    yl : float, optional, default=0.
+        Lower limit of the Tobit model. If there is no lower censoring,
+        simply set this parameter to a low value (lower than all data points).
+
+    yu : float, optional, default=1.
+        Upper limit of the Tobit model. If there is no upper censoring,
+        simply set this parameter to a high value (higher than all data points).
+
+    gamma : float, default=1.
+        Shape parameter for gamma regression.
 
     tweedie_variance_power: float, default=1.5
         Parameter for tweedie loss.
@@ -2857,10 +2853,11 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
                  init=None, random_state=None,
                  max_features=None, alpha=0.9, verbose=0, max_leaf_nodes=None,
                  warm_start=False, validation_fraction=0.1,
-                 n_iter_no_change=None, tol=1e-4, sigma=1., yl=0., yu=1., gamma=1,
+                 n_iter_no_change=None, tol=1e-4,
                  update_step="hybrid", base_learner="tree", kernel="rbf", scaleX=False, 
                  theta=1, n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=1.,
-                 sparse=False, nystroem=False, n_components=100, tweedie_variance_power=1.5):
+                 sparse=False, nystroem=False, n_components=100,
+                 sigma=1., yl=0., yu=1., gamma=1, tweedie_variance_power=1.5):
 
         super(BoostingRegressor, self).__init__(
             loss=loss, learning_rate=learning_rate, n_estimators=n_estimators,
