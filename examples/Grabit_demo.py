@@ -30,12 +30,13 @@ y[y<=yl]=yl
 # train model and make predictions
 model=KTBoost.BoostingRegressor(loss='tobit', yl=yl, yu=yu).fit(X, y)
 y_pred=model.predict(X_test)
+
 # mean square error (approx. 0.45 for n=1000)
 print("Test error Grabit: " + str(((y_pred-y_test)**2).mean()))
 # compare to standard least squares gradient boosting (approx. 1.1 for n=1000)
 model_ls=KTBoost.BoostingRegressor(loss='ls').fit(X, y)
 y_pred_ls=model_ls.predict(X_test)
-print("Test error standard least square gradient boosting: " + str(((y_pred_ls-y_test)**2).mean()))
+print("Test error standard least squares gradient boosting: " + str(((y_pred_ls-y_test)**2).mean()))
 
 # measure time
 import time
@@ -116,3 +117,4 @@ model.fit(X, yc)
 X_pred = np.transpose(np.array([x1.flatten(),x2.flatten()]))
 y_pred = model.predict(X_pred)
 plot_2d_fct(x1,x2,y_pred.reshape((100,-1)),title="L2 Boosting",zlim=zlim)
+

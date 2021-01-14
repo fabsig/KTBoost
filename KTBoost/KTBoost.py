@@ -1549,7 +1549,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         
         if ((self.loss == 'tweedie') 
                 and ((self.tweedie_variance_power <= 1) or (self.tweedie_variance_power>=2))):
-            raise ValueError("Tweedie variance power must be (1,2) but was %r" % self.tweedie_variance_power)
+            raise ValueError("Tweedie variance power must be in (1,2) but was %r" % self.tweedie_variance_power)
         
         if self.loss == 'deviance':
             loss_class = (MultinomialDeviance
@@ -1633,7 +1633,6 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
             (self.prctg_neighbors is None) & (self.base_learner in ["kernel","combined"])):
             raise ValueError("At least one from the three parameters theta, "
                              "n_neighbors or prctg_neighbors must be specified")
-
             
     def _init_state(self):
         """Initialize model state and allocate model state data structures. """
@@ -1777,12 +1776,8 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         self._check_params()
 
         if (self.loss == "msr") & (self.min_samples_leaf==1) & (self.update_step in ["gradient", "hybrid"]):
-            warnings.warn("Warning: Minimum number of samples per leaf should be larger than 1 " 
+            warnings.warn("Minimum number of samples per leaf should be larger than 1 " 
                           "for mean-scale regression.")
-
-#        if (self.base_learner=="combined") & (self.subsample==1.0):
-#            warnings.warn("Warning: It is recommended that subsampling (subsample<1.0)"
-#                          "is used for the KTBoost algorithm.")
 
         if ((self.base_learner in ["kernel","combined"]) & 
             (not self.n_neighbors is None)):
@@ -1952,7 +1947,6 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                         n_iter_no_improve = 0
                     else:
                         n_iter_no_improve += 1
-                print(i, n_iter_no_improve, best_iter, self.val_score_[i], best_val_score)
                 if n_iter_no_improve == self.n_iter_no_change:
                     break
         
@@ -2033,9 +2027,9 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                         pred_kernel_mat = modi._get_kernel(X, modi.X_fit_)
                         if not pred_kernel_mat.dtype==np.float64: pred_kernel_mat=pred_kernel_mat.astype(np.float64)
                         predict_stage_kernel(self.estimators_kernel_, self.number_estimators[i][1]-1, X, self.learning_rate, score, pred_kernel_mat)
-            elif (i > 0) & (self.number_estimators[i][0]>self.number_estimators[i-1][0]):
+            elif (i > 0) & (self.number_estimators[i][0]>self.number_estimators[i-1][0]): # tree is used for prediction
                 predict_stage(self.estimators_, self.number_estimators[i][0]-1, X, self.learning_rate, score)
-            else:
+            else: # kernel machine is used for prediction
                 if (pred_kernel_mat is None) & (self.estimators_kernel_.shape[0]>0):
                     modi=self.estimators_kernel_[0,0]
                     modi.theta=self.theta
@@ -2072,7 +2066,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
 
     def _validate_y(self, y, sample_weight):
         # 'sample_weight' is not utilised but is used for
-        # consistency with similar method _validate_y of GBC
+        # consistency with similar method _validate_y of GBC in scikit-learn
         self.n_classes_ = 1
         if y.dtype.kind == 'O':
             y = y.astype(np.float64)
@@ -2407,6 +2401,7 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
                              % n_trim_classes)
         self.n_classes_ = len(self.classes_)
         return y
+    
 
     def decision_function(self, X):
         """Compute the decision function of ``X``.
@@ -2882,6 +2877,18 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
             prctg_neighbors=prctg_neighbors, range_adjust=range_adjust, alphaReg=alphaReg, 
             sparse=sparse, nystroem=nystroem, n_components=n_components, tweedie_variance_power=tweedie_variance_power)
         
+    def _validate_y(self, y, sample_weight):
+        self.n_classes_ = 1
+        if y.dtype.kind == 'O':
+            y = y.astype(np.float64)
+        if self.loss in ('tweedie', 'poisson', 'gamma'):
+            if np.min(y) < 0:
+                raise ValueError("y cannot be smaller than 0 for the '{0:s}' loss. ".format(self.loss))
+        if self.loss == 'tobit':
+            if np.min(y) < self.yl or np.max(y) > self.yu:
+                warnings.warn("Found y value outside the interval [%r,%r]  " % (self.yl,self.yu))
+        return y
+        
     def predict(self, X):
         """Predict regression target for X.
 
@@ -2900,11 +2907,11 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
         X = check_array(X, dtype=DTYPE, order="C",  accept_sparse='csr')
         pred = self._decision_function(X)
         if self.loss_.K == 1:
-            if self.loss == 'tweedie':
+            if self.loss in ('tweedie', 'poisson', 'gamma'):
                 return np.exp(pred.ravel())
             return pred.ravel()
         else:
-            if self.loss == 'tweedie':
+            if self.loss in ('tweedie', 'poisson', 'gamma'):
                 return np.exp(pred)
             return pred
 
