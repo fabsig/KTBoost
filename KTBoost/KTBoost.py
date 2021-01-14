@@ -862,6 +862,77 @@ class PoissonLossFunction(RegressionLossFunction):
         y_pred[:, k][y_pred[:, k]<-MAX_VAL_LOGPRED]=-MAX_VAL_LOGPRED
 
 
+class TweedieLossFunction(RegressionLossFunction):
+    """Loss function for the Tweedie model.
+
+    """
+
+    def __init__(self, n_classes, p=1.5):
+        super(TweedieLossFunction, self).__init__(n_classes)
+        self.p = p
+        
+    def init_estimator(self):
+        return LogMeanEstimator()
+
+    def __call__(self, y, pred, sample_weight=None):
+        
+        pred = pred.ravel()
+        
+        if sample_weight is None:
+            loss = 2 * np.mean(
+                np.power(y, 2-self.p) / ((1-self.p) * (2-self.p)) -
+                y * np.exp(pred * (1-self.p)) / (1-self.p) +
+                np.exp(pred* (2-self.p)) / (2-self.p)
+            )
+        else:
+            loss = 2 * np.mean((
+                    np.power(y, 2-self.p) / ((1-self.p) * (2-self.p)) -
+                    y * np.exp(pred * (1-self.p)) / (1-self.p) +
+                    np.exp(pred * (2-self.p)) / (2-self.p)
+                ) * sample_weight
+            )
+        return loss
+
+    def negative_gradient(self, y, pred, **kargs):
+        pred = pred.ravel()
+        return y * np.exp(pred * (1-self.p)) - np.exp(pred * (2-self.p))
+
+    def hessian(self, y, pred, residual, **kargs):
+        """Compute the second derivative """
+        pred = pred.ravel()
+        return (
+            - y * (1-self.p) * np.exp(pred*(1-self.p)) + 
+            (2-self.p) * np.exp(pred*(2-self.p))
+        )
+
+    def _update_terminal_region(self, tree, terminal_regions, leaf, X, y,
+                                residual, pred, sample_weight):
+        """Make a single Newton-Raphson step.
+        """
+        terminal_region = np.where(terminal_regions == leaf)[0]
+        residual = residual.take(terminal_region, axis=0)
+        sample_weight = sample_weight.take(terminal_region, axis=0)
+        pred = pred.take(terminal_region, axis=0)
+        y_tr = y.take(terminal_region, axis=0)
+        
+        numerator = np.sum(sample_weight * residual)
+        denominator = np.sum(sample_weight * (
+            - y_tr * (1-self.p) * np.exp(pred*(1-self.p)) + 
+            (2-self.p) * np.exp(pred*(2-self.p))
+        ))
+
+        if abs(denominator) < 1e-150:
+            tree.value[leaf, 0] = 0.0
+        else:
+            tree.value[leaf, 0] = numerator / denominator
+
+    def avoid_overflow(self, y_pred, k):
+        y_pred[:, k][y_pred[:, k]>MAX_VAL_LOGPRED]=MAX_VAL_LOGPRED
+        y_pred[:, k][y_pred[:, k]<-MAX_VAL_LOGPRED]=-MAX_VAL_LOGPRED
+
+
+
+
 class GammaLossFunction(RegressionLossFunction):
     """Loss function for the Gamma model.
 
@@ -1143,6 +1214,7 @@ LOSS_FUNCTIONS = {'ls': LeastSquaresError,
                   'exponential': ExponentialLoss,
                   'tobit': TobitLossFunction,
                   'poisson': PoissonLossFunction,
+                  'tweedie': TweedieLossFunction,
                   'gamma': GammaLossFunction
                   }
 
@@ -1175,6 +1247,9 @@ class VerboseReporter(object):
         if est.subsample < 1:
             header_fields.append('OOB Improve')
             verbose_fmt.append('{oob_impr:>16.4f}')
+        if est.n_iter_no_change is not None:
+            header_fields.append('Val Loss')
+            verbose_fmt.append('{val_score:>16.4f}')            
         header_fields.append('Remaining Time')
         verbose_fmt.append('{remaining_time:>16s}')
 
@@ -1195,6 +1270,10 @@ class VerboseReporter(object):
         i = j - self.begin_at_stage  # iteration relative to the start iter
         if (i + 1) % self.verbose_mod == 0:
             oob_impr = est.oob_improvement_[j] if do_oob else 0
+            if est.n_iter_no_change is not None: 
+                val_score = est.val_score_[j]
+            else:
+                val_score = 0
             remaining_time = ((est.n_estimators - (j + 1)) *
                               (time() - self.start_time) / float(i + 1))
             if remaining_time > 60:
@@ -1203,6 +1282,7 @@ class VerboseReporter(object):
                 remaining_time = '{0:.2f}s'.format(remaining_time)
             print(self.verbose_fmt.format(iter=j + 1,
                                           train_score=est.train_score_[j],
+                                          val_score=val_score,
                                           oob_impr=oob_impr,
                                           remaining_time=remaining_time))
             if self.verbose == 1 and ((i + 1) // (self.verbose_mod * 10) > 0):
@@ -1264,7 +1344,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                  n_iter_no_change=None, tol=1e-4, sigma=1., yl=0., yu=1., gamma=1,
                  update_step="hybrid", base_learner="tree", kernel="rbf", scaleX=False, 
                  theta=1, n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=1.,
-                 sparse=False, nystroem=False, n_components=100):
+                 sparse=False, nystroem=False, n_components=100, tweedie_variance_power=1.5):
 
         self.n_estimators = n_estimators
         self.learning_rate = learning_rate
@@ -1303,6 +1383,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         self.sparse = sparse
         self.nystroem = nystroem
         self.n_components = n_components
+        self.tweedie_variance_power = tweedie_variance_power
 
     def _fit_stage(self, i, X, y, y_pred, sample_weight, sample_mask,
                    random_state, nTreeKernel, X_csc=None, X_csr=None):
@@ -1350,7 +1431,8 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
                     min_impurity_decrease=self.min_impurity_decrease,
                     max_features=self.max_features,
                     max_leaf_nodes=self.max_leaf_nodes,
-                    random_state=random_state)
+                    random_state=random_state,
+                    )
     
                 if X_csc is not None:
                     tree.fit(X_csc, residual, sample_weight=weights,
@@ -1464,7 +1546,11 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         if ((self.loss in ('exponential')) 
                 and (self.update_step == "newton")):
             raise ValueError("Newton updates for loss '{0:s}' currently not supported. ".format(self.loss))
-
+        
+        if ((self.loss == 'tweedie') 
+                and ((self.tweedie_variance_power <= 1) or (self.tweedie_variance_power>=2))):
+            raise ValueError("Tweedie variance power must be (1,2) but was %r" % self.tweedie_variance_power)
+        
         if self.loss == 'deviance':
             loss_class = (MultinomialDeviance
                           if len(self.classes_) > 2
@@ -1477,6 +1563,8 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         elif self.loss in ('tobit'):
             self.loss_ = loss_class(self.n_classes_, self.sigma,
                                     self.yl, self.yu)
+        elif self.loss in ('tweedie'):
+            self.loss_ = loss_class(self.n_classes_, self.tweedie_variance_power)
         else:
             self.loss_ = loss_class(self.n_classes_)
 
@@ -1569,10 +1657,14 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         self.neigh_ind=None##Indices of nearest neighbors for kNN
         self.number_estimators = np.empty((self.n_estimators,2),dtype=np.object)##Number of estimators [0]: trees, [1]: other base learners
         self.train_score_ = np.zeros((self.n_estimators,), dtype=np.float64)
+        
         # do oob?
         if self.subsample < 1.0:
             self.oob_improvement_ = np.zeros((self.n_estimators),
                                              dtype=np.float64)
+        # do validation?
+        if self.n_iter_no_change is not None:
+            self.val_score_ = np.zeros((self.n_estimators,), dtype=np.float64)
 
     def _clear_state(self):
         """Clear the state of the boosting model. """
@@ -1580,6 +1672,8 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
             self.estimators_ = np.empty((0, 0), dtype=np.object)
         if hasattr(self, 'train_score_'):
             del self.train_score_
+        if hasattr(self, 'val_score_'):
+            del self.val_score_
         if hasattr(self, 'oob_improvement_'):
             del self.oob_improvement_
         if hasattr(self, 'init_'):
@@ -1597,6 +1691,8 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
 
         self.estimators_.resize((total_n_estimators, self.loss_.K))
         self.train_score_.resize(total_n_estimators)
+        if self.n_iter_no_change is not None:
+            self.val_score_.resize(total_n_estimators)
         if (self.subsample < 1 or hasattr(self, 'oob_improvement_')):
             # if do oob resize arrays or create new if not available
             if hasattr(self, 'oob_improvement_'):
@@ -1733,8 +1829,9 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         n_stages = self._fit_stages(X, y, y_pred, sample_weight, self._rng,
                                     X_val, y_val, sample_weight_val,
                                     begin_at_stage, monitor)
-        n_trees = self.number_estimators[self.n_estimators-1][0]
-        n_kernel = self.number_estimators[self.n_estimators-1][1]
+        
+        n_trees = self.number_estimators[n_stages-1][0]
+        n_kernel = self.number_estimators[n_stages-1][1]
         if not self.base_learner in ["tree","kernel"]:
             print("Number of trees="+str(n_trees)+", number of kernel functions="+str(n_kernel))
         # change shape of arrays after fit (early-stopping or additional iterations)
@@ -1745,6 +1842,7 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
             
         if n_stages != (n_trees+n_kernel):
             self.train_score_ = self.train_score_[:n_stages]
+            self.val_score_ = self.val_score_[:n_stages]
             if hasattr(self, 'oob_improvement_'):
                 self.oob_improvement_ = self.oob_improvement_[:n_stages]
 
@@ -1783,6 +1881,11 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         # perform boosting iterations
         i = begin_at_stage
         nTreeKernel=[0,0]##Number of trees [0] and kernel regressors [1] at iteration i
+        
+        n_iter_no_improve = 0
+        best_val_score = np.inf
+        best_iter = 0
+        
         for i in range(begin_at_stage, self.n_estimators):
 
             # subsampling
@@ -1812,7 +1915,14 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
             else:
                 # no need to fancy index w/ no subsampling
                 self.train_score_[i] = loss_(y, y_pred, sample_weight)
-
+            
+            # Calculate validation score
+            if self.n_iter_no_change is not None:
+                # By calling next(y_val_pred_iter), we get the predictions
+                # for X_val after the addition of the current stage
+                self.val_score_[i] = loss_(y_val, next(y_val_pred_iter),
+                                        sample_weight_val)
+                
             if self.verbose > 0:
                 verbose_reporter.update(i, self)
 
@@ -1824,19 +1934,32 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
             # We also provide an early stopping based on the score from
             # validation set (X_val, y_val), if n_iter_no_change is set
             if self.n_iter_no_change is not None:
-                # By calling next(y_val_pred_iter), we get the predictions
-                # for X_val after the addition of the current stage
-                validation_loss = loss_(y_val, next(y_val_pred_iter),
-                                        sample_weight_val)
-
-                # Require validation_score to be better (less) than at least
-                # one of the last n_iter_no_change evaluations
-                if np.any(validation_loss + self.tol < loss_history):
-                    loss_history[i % len(loss_history)] = validation_loss
-                else:
-                    break
+                # # Require validation_score to be better (less) than at least
+                # # one of the last n_iter_no_change evaluations
+                # if np.any(self.val_score_[i] + self.tol < loss_history):
+                #     loss_history[i % len(loss_history)] = self.val_score_[i]
+                # else:
+                #     break
                 
-        return i + 1
+                # Early stop if consecutive (n_iter_no_change) iterations have not
+                # made any improvement in val score
+                if i == 0:
+                    best_val_score = self.val_score_[i]
+                else:
+                    if self.val_score_[i] < (best_val_score + self.tol):
+                        best_iter = i
+                        best_val_score = self.val_score_[i]
+                        n_iter_no_improve = 0
+                    else:
+                        n_iter_no_improve += 1
+                print(i, n_iter_no_improve, best_iter, self.val_score_[i], best_val_score)
+                if n_iter_no_improve == self.n_iter_no_change:
+                    break
+        
+        if self.n_iter_no_change is not None:
+            return best_iter + 1
+        else:
+            return i + 1
 
     def _make_estimator(self, append=True):
         # we don't need _make_estimator
@@ -1845,7 +1968,10 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
     def _init_decision_function(self, X):
         """Check input and compute prediction of ``init``. """
         self._check_initialized()
-        n_trees = self.number_estimators[self.n_estimators-1][0]
+        # number of estimators is initialized as np.empty array
+        n_trees = 0
+        if self.number_estimators[self.n_estimators-1][0] is not None:
+            n_trees = self.number_estimators[self.n_estimators-1][0]
         # XXX ToDo make sure that '_validate_X_predict' is also performed when no tree is present
         if n_trees>0: X = self.estimators_[0, 0]._validate_X_predict(X, check_input=True)
         if X.shape[1] != self.n_features_:
@@ -1894,7 +2020,20 @@ class BaseBoosting(six.with_metaclass(ABCMeta, BaseEnsemble)):
         score = self._init_decision_function(X)
         pred_kernel_mat = None
         for i in range(self.number_estimators.shape[0]):
-            if ((i==0) & (self.number_estimators[0][0]==1) | (i>0) & (self.number_estimators[i][0]>self.number_estimators[i-1][0])):##Tree for prediction
+            # Skip if there is no estimator
+            if self.number_estimators[i][0] is None:
+                continue
+            
+            if (i == 0):
+                if self.number_estimators[0][0]==1:
+                    predict_stage(self.estimators_, self.number_estimators[i][0]-1, X, self.learning_rate, score)
+                elif (pred_kernel_mat is None) & (self.estimators_kernel_.shape[0]>0):
+                        modi=self.estimators_kernel_[0,0]
+                        modi.theta=self.theta
+                        pred_kernel_mat = modi._get_kernel(X, modi.X_fit_)
+                        if not pred_kernel_mat.dtype==np.float64: pred_kernel_mat=pred_kernel_mat.astype(np.float64)
+                        predict_stage_kernel(self.estimators_kernel_, self.number_estimators[i][1]-1, X, self.learning_rate, score, pred_kernel_mat)
+            elif (i > 0) & (self.number_estimators[i][0]>self.number_estimators[i-1][0]):
                 predict_stage(self.estimators_, self.number_estimators[i][0]-1, X, self.learning_rate, score)
             else:
                 if (pred_kernel_mat is None) & (self.estimators_kernel_.shape[0]>0):
@@ -2168,7 +2307,9 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
 
     n_components : int, detault = 100
         Number of data points used in Nystroem sampling for kernel boosting.
-
+        
+    tweedie_variance_power: float, default=1.5
+        Parameter for tweedie loss.
     Attributes
     ----------
     n_estimators_ : int
@@ -2239,7 +2380,7 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
                  n_iter_no_change=None, tol=1e-4, update_step="hybrid",
                  base_learner="tree", kernel="rbf", scaleX=False, theta=1, 
                  n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=1.,
-                 sparse=False, nystroem=False, n_components=100):
+                 sparse=False, nystroem=False, n_components=100, tweedie_variance_power=1.5):
 
         super(BoostingClassifier, self).__init__(
             loss=loss, learning_rate=learning_rate, n_estimators=n_estimators, criterion=criterion,
@@ -2252,7 +2393,8 @@ class BoostingClassifier(BaseBoosting, ClassifierMixin):
             n_iter_no_change=n_iter_no_change, tol=tol, update_step=update_step, 
             base_learner=base_learner, kernel=kernel, scaleX=scaleX, theta=theta, 
             n_neighbors=n_neighbors, prctg_neighbors=prctg_neighbors, range_adjust=range_adjust,
-            alphaReg=alphaReg, sparse=sparse, nystroem=nystroem, n_components=n_components)
+            alphaReg=alphaReg, sparse=sparse, nystroem=nystroem, n_components=n_components,
+            tweedie_variance_power=tweedie_variance_power)
 
     def _validate_y(self, y, sample_weight):
         check_classification_targets(y)
@@ -2443,8 +2585,8 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
 
     Parameters
     ----------
-    loss : {'ls', 'lad', 'huber', 'quantile', 'poisson', 'gamma', 'tobit', 
-            'msr'}, optional (default='ls')
+    loss : {'ls', 'lad', 'huber', 'quantile', 'poisson', 'tweedie', 'gamma', 
+            'tobit', 'msr'}, optional (default='ls')
         loss function to be optimized. 'ls' refers to squared loss.
         'lad' (least absolute deviation) is a highly robust
         loss function solely based on order information of the input
@@ -2657,7 +2799,9 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
     n_components : int, detault = 100
         Number of data points used in Nystroem sampling for kernel boosting.
 
-
+    tweedie_variance_power: float, default=1.5
+        Parameter for tweedie loss.
+        
     Attributes
     ----------
     feature_importances_ : array, shape = [n_features]
@@ -2709,7 +2853,7 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
     """
 
     _SUPPORTED_LOSS = ('ls', 'lad', 'huber', 'quantile', 'tobit', 'poisson',
-                       'gamma', 'msr')
+                       'tweedie', 'gamma', 'msr')
 
     def __init__(self, loss='ls', learning_rate=0.1, n_estimators=100,
                  subsample=1.0, criterion='mse', min_samples_split=2,
@@ -2721,7 +2865,7 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
                  n_iter_no_change=None, tol=1e-4, sigma=1., yl=0., yu=1., gamma=1,
                  update_step="hybrid", base_learner="tree", kernel="rbf", scaleX=False, 
                  theta=1, n_neighbors=None, prctg_neighbors=None, range_adjust=1., alphaReg=1.,
-                 sparse=False, nystroem=False, n_components=100):
+                 sparse=False, nystroem=False, n_components=100, tweedie_variance_power=1.5):
 
         super(BoostingRegressor, self).__init__(
             loss=loss, learning_rate=learning_rate, n_estimators=n_estimators,
@@ -2736,8 +2880,8 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
             yl=yl, yu=yu, gamma=gamma, update_step=update_step, base_learner=base_learner, 
             kernel=kernel, scaleX=scaleX, theta=theta,  n_neighbors=n_neighbors, 
             prctg_neighbors=prctg_neighbors, range_adjust=range_adjust, alphaReg=alphaReg, 
-            sparse=sparse, nystroem=nystroem, n_components=n_components)
-
+            sparse=sparse, nystroem=nystroem, n_components=n_components, tweedie_variance_power=tweedie_variance_power)
+        
     def predict(self, X):
         """Predict regression target for X.
 
@@ -2756,8 +2900,12 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
         X = check_array(X, dtype=DTYPE, order="C",  accept_sparse='csr')
         pred = self._decision_function(X)
         if self.loss_.K == 1:
+            if self.loss == 'tweedie':
+                return np.exp(pred.ravel())
             return pred.ravel()
         else:
+            if self.loss == 'tweedie':
+                return np.exp(pred)
             return pred
 
     def staged_predict(self, X):
@@ -2780,8 +2928,12 @@ class BoostingRegressor(BaseBoosting, RegressorMixin):
         """
         for y in self._staged_decision_function(X):
             if self.loss_.K == 1:
+                if self.loss == 'tweedie':
+                    yield np.exp(y)
                 yield y.ravel()
             else:
+                if self.loss == 'tweedie':
+                    yield np.exp(y)
                 yield y
 
     def apply(self, X):
