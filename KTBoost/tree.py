@@ -321,16 +321,14 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
                                             min_samples_leaf,
                                             self.min_weight_leaf,
                                             max_depth,
-                                            self.min_impurity_decrease,
-                                            min_impurity_split)
+                                            self.min_impurity_decrease)
         else:
             builder = BestFirstTreeBuilder(splitter, min_samples_split,
                                            min_samples_leaf,
                                            self.min_weight_leaf,
                                            max_depth,
                                            max_leaf_nodes,
-                                           self.min_impurity_decrease,
-                                           min_impurity_split)
+                                           self.min_impurity_decrease)
 
         builder.build(self.tree_, X, y, sample_weight)
 

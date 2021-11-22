@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="KTBoost",
-    version="0.2.0",
+    version="0.2.2",
     author="Fabio Sigrist",
     author_email="fabiosigrist@gmail.com",
     description="Implements several boosting algorithms in Python",
@@ -19,5 +19,5 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=['scikit-learn>=0.24.0','bottleneck','matplotlib'],
+    install_requires=['scikit-learn>=1.0.1','bottleneck','matplotlib'],
 )

@@ -40,3 +40,9 @@ print("Test error of standard least squares gradient boosting: " + str(((pred_ls
 plt.scatter(pred_gamma, pred_ls)
 plt.title("Least squares gradient boosting vs. Gamma boosting predicted values")
 plt.show()
+
+# Compare to Tweedie boosting
+model = KTBoost.BoostingRegressor(loss='tweedie').fit(X, y)
+pred_tw = model.predict(X_test)
+# mean square error (approx. 0.022)
+print("Test error of Tweedie boosting: " + str(((pred_tw-lp_test)**2).mean()))
